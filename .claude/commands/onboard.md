@@ -11,53 +11,96 @@ Guide a new user (or re-configure an existing user) through a progressive, role-
 
 ## Core Principle
 
-**Progressive disclosure with role-aware routing.** Not every user needs every capability. The three-question flow (Role -> Project State -> Level) deterministically routes each user to the exact setup path they need -- no more and no less. CLAUDE.md is generated dynamically from the answers, not copied from a static template. The result is a personalized AI context that reflects the specific developer, their role, and their access level.
+**Progressive disclosure with role-aware routing.** Not every user needs every capability. The four-question flow (Language -> Role -> Project State -> Level) deterministically routes each user to the exact setup path they need -- no more and no less. All subsequent prompts, commands, and generated files adapt to the chosen language. CLAUDE.md is generated dynamically from the answers, not copied from a static template.
 
 ## Process
 
+### Step 0: Language Selection (MANDATORY — always first)
+
+Before any other questions, present Language Selection:
+
+> **Choose your language / 请选择语言：**
+>
+> 1. **English** — All prompts, command output, and generated documentation will be in English.
+> 2. **中文** — 所有提示、命令输出和生成的文档将使用中文。
+
+Capture the answer as `$LANG`. Set all subsequent prompts to use `$LANG`.
+
+**Effect:** Every question from this point on is displayed in `$LANG`. Generated CLAUDE.md section headers, WORKFLOW.md references, command descriptions, and error messages all adapt to `$LANG`. The README.md and README.zh.md / README.en.md guide files already exist in both languages — reference the appropriate one based on `$LANG`.
+
 ### Step 1: Entry -- Identify Role
 
-Present Question 1:
+Present Question (in `$LANG`):
 
-> **What is your primary role on this project?**
+> **EN:** What is your primary role on this project?
+> **ZH:** 你在这个项目中的主要角色是什么？
 >
-> 1. **Product Manager / Designer** -- You define what gets built. You work in Discover phase: brainstorm requirements, write PRD specs, create design briefs. You hand off specs to developers for implementation.
-> 2. **Developer** -- You build it. You receive PRD specs and plans, then execute (TDD), verify, and release. You work across Plan -> Execute -> Verify -> Release phases.
-> 3. **Full-stack Independent** -- You do everything end-to-end. You discover, plan, execute, verify, and release. Full pipeline access across all 5 phases.
-> 4. **Maintenance / On-call** -- You fix things. You use hotfix and diagnostic tools. You work at L0-L1: targeted fixes and health checks.
+> 1. **Product Manager / Designer (产品经理/设计师)** — Define requirements, write PRD specs, create design briefs. Work in Discover phase (Phase 1). Hand off specs to developers.
+> 2. **Developer (开发工程师)** — Receive PRD specs and plans, execute (TDD), verify, release. Work across Plan → Execute → Verify → Release phases (Phase 2-5).
+> 3. **Full-stack Independent (全栈独立)** — Do everything end-to-end. Full pipeline across all 5 phases.
+> 4. **Maintenance / On-call (维护/值班)** — Fix things via hotfix and diagnostics. Work at L0-L1.
 
 Capture the answer as `$ROLE`.
 
 ### Step 2: Identify Project State
 
-Present Question 2:
+Present Question (in `$LANG`):
 
-> **What is the current state of this project?**
+> **EN:** What is the current state of this project?
+> **ZH:** 当前项目处于什么状态？
 >
-> 1. **Brand new project** -- Empty directory or newly cloned. Need full initialization: `openspec init`, config deployment, CLAUDE.md generation.
-> 2. **Existing project without AI Dev Base** -- Has code but no `.claude/`, `specs/`, or `.githooks/`. Need to retrofit the base structure.
-> 3. **Existing project with AI Dev Base** -- Already has `.claude/`, `specs/`, `.githooks/`. Need to reconfigure role, level, or regenerate CLAUDE.md.
+> 1. **Brand new project (全新项目)** — Empty directory or newly cloned. Need full initialization: `openspec init`, config deployment, CLAUDE.md generation.
+> 2. **Existing project without AI Dev Base (已有项目，未接入基座)** — Has code but no `.claude/`, `specs/`, or `.githooks/`. Need to retrofit the base structure.
+> 3. **Existing project with AI Dev Base (已有项目，已接入基座)** — Already has `.claude/`, `specs/`, `.githooks/`. Need to reconfigure role, level, or regenerate CLAUDE.md.
 
 Capture the answer as `$PROJECT_STATE`.
 
 ### Step 3: Identify Enablement Level
 
-Present Question 3:
+Present Question (in `$LANG`):
 
-> **What level of automation do you want?**
+> **EN:** What level of automation do you want?
+> **ZH:** 你希望启用哪个自动化级别？
 >
-> | Level | What You Get |
-> |-------|-------------|
-> | **L0 Hotfix** | Zero config. `/hotfix` and `/diagnose` only. Secret scan + format on commit. No TDD requirement. No MCPs. |
-> | **L1 Light** | Individual developer. Core skills (TDD, code-review, verification). Pre-commit hooks (format, lint, type-check, secret-scan). TypeScript LSP and Serena MCPs. No parallel agents. |
-> | **L2 Standard** | Team workflow (RECOMMENDED). Full skill chain (brainstorming, writing-plans, executing-plans, TDD, subagent, code-review, verification, release). All pre-commit and pre-push hooks. All 4 MCPs (Playwright, Figma, Serena, TS LSP). Parallel agents. Full gate enforcement. |
-> | **L3 Full** | Enterprise. Everything in L2 plus: design-brief-builder skill, quality metrics collection, feedback loop (capture manual fixes -> evolve rules/templates), auto-archive. |
+> | Level | Capabilities / 能力范围 |
+> |-------|------------------------|
+> | **L0 Hotfix (急救)** | Zero config. `/hotfix` and `/diagnose` only. Secret scan + format on commit. No TDD requirement. No MCPs. |
+> | **L1 Light (轻量)** | Individual developer. Core skills (TDD, code-review, verification). Pre-commit hooks (format, lint, type-check, secret-scan). TypeScript LSP and Serena MCPs. No parallel agents. |
+> | **L2 Standard (标准，推荐)** | Team workflow (RECOMMENDED). Full skill chain. All pre-commit and pre-push hooks. All 4 MCPs. Parallel agents. Full gate enforcement. |
+> | **L3 Full (全量)** | Enterprise. Everything in L2 plus: quality metrics collection, feedback loop (auto-evolve rules/templates), auto-archive. |
 
 Capture the answer as `$LEVEL`.
 
 ### Step 4: Routing Table -- Execute Setup
 
-Based on `$ROLE` + `$PROJECT_STATE` + `$LEVEL`, execute the appropriate setup path:
+Based on `$LANG` + `$ROLE` + `$PROJECT_STATE` + `$LEVEL`, execute the appropriate setup path.
+
+#### Step 4.0: Prerequisite Check & Installation Guide
+
+Before deploying config files, check which required components are available for the selected `$LEVEL`. Display the results in `$LANG`:
+
+| Component | How to Check | L0 | L1 | L2 | L3 |
+|-----------|-------------|----|----|----|----|
+| Claude Code | `claude --version` | ✓ | ✓ | ✓ | ✓ |
+| OpenSpec CLI | `openspec --version` | — | ✓ | ✓ | ✓ |
+| Superpowers plugin | Check `~/.claude/plugins/installed_plugins.json` for `superpowers` | — | ✓ | ✓ | ✓ |
+| Figma plugin | Check `installed_plugins.json` for `figma` | — | — | ✓ | ✓ |
+| TS LSP MCP | `claude mcp list` shows `typescript-lsp` | — | ✓ | ✓ | ✓ |
+| Serena MCP | `claude mcp list` shows `serena` | — | ✓ | ✓ | ✓ |
+| Playwright MCP | `claude mcp list` shows `playwright` | — | — | ✓ | ✓ |
+| gitleaks | `command -v gitleaks` | — | — | — | ✓ |
+| semgrep | `command -v semgrep` | — | — | — | ✓ |
+| oasdiff | `command -v oasdiff` | — | — | ✓ | ✓ |
+
+For each missing required component, output the installation command in `$LANG`:
+- **EN:** "Missing: `<component>`. Install: `<command>`"
+- **ZH:** "缺失：`<component>`。安装方式：`<command>`"
+
+After displaying all missing items, ask:
+- **EN:** "Install missing components now, or proceed with limited functionality?"
+- **ZH:** "现在安装缺失组件，还是以受限功能继续？"
+
+Do NOT block setup — let the user proceed with what's available. Missing MCPs mean those specific checks will gracefully skip during execution.
 
 #### Path: Project Init (PROJECT_STATE = "brand new" or "existing without base")
 
@@ -116,42 +159,45 @@ Skip `openspec init` and hook deployment. Focus on:
 
 ### Step 5: Generate CLAUDE.md
 
-Based on `$ROLE` + `$LEVEL`, generate `.claude/CLAUDE.md` dynamically. Do not copy a static template. The file must include:
+Based on `$LANG` + `$ROLE` + `$LEVEL`, generate `.claude/CLAUDE.md` dynamically. Do not copy a static template. The file must include:
 
 ```markdown
 # Project: <project-name>
 
-## Overview
+## Language / 语言
+- <$LANG> (All interactions will use this language)
+
+## Overview / 概述
 <Auto-detected from package.json / pyproject.toml / go.mod, or user-supplied>
 
-## Role & Level
+## Role & Level / 角色与级别
 - Role: <$ROLE>
 - Level: <$LEVEL> (<level-name>)
 - Setup Date: <timestamp>
 
-## Commands I Can Use
+## Commands I Can Use / 可用命令
 <Available commands per level from settings.json>
 
-## Build & Test
+## Build & Test / 构建与测试
 <Auto-detected or user-supplied: npm test, pytest, go test, etc.>
 
-## Active Changes
+## Active Changes / 活跃变更
 <Scanned from specs/ -- list of change-id with status>
 
-## Architecture
+## Architecture / 架构
 <Auto-detected: language, framework, key directories>
 
-## Constraints
-- NEVER skip gates
+## Constraints / 约束
+- NEVER skip gates / 严禁跳过 Gate
 - TDD required: <yes/no per level>
 - Parallel agents: <yes/no per level>
 - File scope enforcement: <yes/no>
 - Spec drift detection: <yes/no>
 
-## MCP Servers Available
+## MCP Servers Available / 可用 MCP
 <List from settings.json level config>
 
-## Skills Available
+## Skills Available / 可用 Skill
 <List from settings.json level config>
 ```
 
