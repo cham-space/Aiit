@@ -1,32 +1,249 @@
-# Project: {{PROJECT_NAME}}
+# CLAUDE.md — Generation Rules
 
-## Current Level
-L{{LEVEL}} — {{LEVEL_DESC}}
+> **This file defines HOW /onboard generates the project's `.claude/CLAUDE.md`.**
+> It is NOT a fill-in-the-blank template. Each section specifies:
+> - **Source**: where the data comes from (auto-detect / user prompt / file scan)
+> - **Update trigger**: when this section gets refreshed
+> - **Constraint**: line limits, format rules
+>
+> The `/onboard` command reads these rules, executes auto-detection, prompts the user for missing info, and writes the final CLAUDE.md.
 
-## Active Changes
-| Change ID | PRD Spec | Phase | Status |
-|-----------|----------|-------|--------|
-<!-- ACTIVE_CHANGES_START -->
-<!-- ACTIVE_CHANGES_END -->
+---
 
-## Quick Links
+## Section 1: Project Identity
+
+**Source:** Auto-detect → user confirm
+**Update:** `/onboard` only
+
+- **Project name**: Extract from `git remote get-url origin` → repo name, or `basename $(pwd)`
+- **One-line description**: Prompt user: "Describe this project in one sentence."
+- **Language**: Run `detect_ecosystem()` from `.githooks/lib/utils.sh`
+- **Framework**: Scan lock files: `package.json` → Next.js/React/Vue; `pyproject.toml` → FastAPI/Django; `go.mod` → Gin/Echo; `Cargo.toml` → Actix/Axum
+
+**Constraint:** ≤ 5 lines
+
+---
+
+## Section 2: Role & Level
+
+**Source:** `/onboard` Q1 + Q3 answers
+**Update:** `/onboard` re-run
+
+```
+- Role: <$ROLE>
+- Level: L<N> (<level-name>)
+- Setup Date: <timestamp>
+```
+
+**Constraint:** 3 lines, no prose
+
+---
+
+## Section 3: Build & Test Commands
+
+**Source:** Auto-detect from ecosystem
+**Update:** `/onboard` + manual edit if commands change
+
+Detection rules:
+| Ecosystem | Build | Test | Lint |
+|-----------|-------|------|------|
+| `package.json` + `next` | `npm run build` | `npm test` | `npm run lint` |
+| `package.json` + `vite` | `npm run build` | `npx vitest run` | `npx eslint .` |
+| `pyproject.toml` | `python -m build` | `pytest` | `ruff check .` |
+| `go.mod` | `go build ./...` | `go test ./...` | `golangci-lint run` |
+| `Cargo.toml` | `cargo build` | `cargo test` | `cargo clippy` |
+
+Prompt user to confirm or correct. **Constraint:** ≤ 5 lines, commands only, no explanations.
+
+---
+
+## Section 4: Active Changes
+
+**Source:** Scan `specs/prd/` for `*.md` files, read status from each
+**Update:** Auto on every phase transition + `/close-phase`
+
+```
+| Change ID | Status | Current Phase | Last Updated |
+|-----------|--------|---------------|--------------|
+| <change-id> | <proposed/planned/executed> | <1-5> | <date> |
+```
+
+Empty state: "No active changes. Run `/discover [idea]` to create one."
+
+**Constraint:** ≤ 10 entries, oldest archived entries removed from this table
+
+---
+
+## Section 5: Directory Map
+
+**Source:** Fixed (project structure)
+**Update:** `/onboard` init only
+
+Quick-reference pointers:
 - Process handbook: `.claude/WORKFLOW.md`
-- Active specs: `specs/`
+- Specs (OpenSpec): `specs/`
 - History: `archive/`
 - Quality gates: `.githooks/` + `.github/workflows/`
 
-## Project-Specific
-- Language: {{LANGUAGE}}
-- Framework: {{FRAMEWORK}}
-- Custom skills: `.claude/skills/`
+**Constraint:** 5 lines
 
-## Phase Commands
-| Phase | Command | Description |
-|-------|---------|-------------|
-| 1 | `/discover [idea]` | Explore and define requirements |
-| 2 | (auto) | Plan generation from approved PRD |
-| 3 | `/execute` | Run TDD implementation loop |
-| 4 | (auto) | Verification gates |
-| 5 | `/close-phase` | Finalize and archive |
-| Any | `/hotfix` | Emergency fix (L0+) |
-| Any | `/diagnose` | Diagnostic investigation |
+---
+
+## Section 6: Architecture Overview
+
+**Source:** Auto-detect + summarize
+**Update:** `/onboard` + manual edit when architecture changes
+
+- Scan top-level directories (≤ 2 levels)
+- Summarize in ≤ 15 lines of `tree` format
+- One paragraph on architecture style (layered / event-driven / microservices) — auto-inferred from structure
+- Link to full design doc if exists: `docs/superpowers/specs/*-design.md`
+
+**Constraint:** ≤ 15 lines for tree, 1 paragraph for description
+
+---
+
+## Section 7: Code Patterns
+
+**Source:** `.claude/WORKFLOW.md` + language defaults
+**Update:** Manual when conventions change
+
+Auto-populate based on language:
+- **TypeScript**: camelCase functions, PascalCase components, kebab-case files
+- **Python**: snake_case functions, PascalCase classes, snake_case files
+- **Go**: camelCase exports, PascalCase types, lowercase packages
+- **Rust**: snake_case functions, PascalCase types, snake_case files
+
+Plus surgical-change rules (from WORKFLOW.md):
+- Touch only what the request requires
+- Match existing style; no unrelated refactoring
+- Delete only imports/variables made unused by YOUR changes
+
+**Constraint:** ≤ 10 lines
+
+---
+
+## Section 8: Testing Rules
+
+**Source:** `.claude/reference/test-strategies/<type>.md` + user confirm
+**Update:** `/onboard` init
+
+Auto-detect project type and load corresponding test strategy:
+- Web/SPA → `test-strategies/web.md`
+- REST API → `test-strategies/rest-api.md`
+- CLI → `test-strategies/cli.md`
+- Mobile → `test-strategies/mobile.md`
+- Tauri → `test-strategies/tauri.md`
+- Worker → `test-strategies/worker.md`
+
+Extract the "Quick Reference" section (≤ 5 lines) from the matched strategy.
+
+**Constraint:** ≤ 5 lines summary + link to full strategy
+
+---
+
+## Section 9: On-Demand Context
+
+**Source:** Fixed (project reference files)
+**Update:** Manual when references change
+
+```
+| Topic | File | When to Read |
+|-------|------|-------------|
+| Frontend patterns | .claude/reference/components.md | Building UI |
+| API patterns | .claude/reference/api.md | Defining endpoints |
+| Spec drift guide | .claude/reference/spec-drift-guide.md | openspec diff shows drift |
+| Test strategies | .claude/reference/test-strategies/ | Writing tests |
+```
+
+**Hard isolation rule:** Never read these files unless the current task requires them.
+
+---
+
+## Section 10: Skill Activation Rules
+
+**Source:** `.claude/settings.json` → `phaseSkillMapping`
+**Update:** Auto when level changes
+
+Generated from phase-skill mapping:
+| When | Activate |
+|------|----------|
+| Phase 1 (Discover) | brainstorming, openspec validate |
+| Phase 2 (Plan) | writing-plans, api-contract-first, frontend-design |
+| Phase 3 (Execute) | executing-plans, TDD, openspec diff |
+| Phase 4 (Verify) | verification-before-completion, code-review, openspec validate |
+| Phase 5 (Release) | finishing-a-development-branch, release-builder, openspec archive |
+
+At L2+: add subagent-driven-development, dispatching-parallel-agents to Phase 3.
+
+---
+
+## Section 11: Safety Rules
+
+**Source:** Fixed (cross-project guardrails)
+**Update:** Rarely (when rules evolve)
+
+### Secrets & Credentials
+- Never commit `.env*`, `*.key`, `*.pem`, credential files
+- Pre-commit hook: gitleaks secret scan — blocks commit on detection
+
+### Git Operations
+- Confirm before `git push`
+- Avoid destructive: `reset --hard`, `push --force`, `clean -fd`
+- Prefer safer alternatives (`revert` over `reset --hard`)
+
+### Data & Schema
+- Summarize migration impact before running; wait for confirmation
+- Flag any data-loss risk
+
+### Dependencies
+- Explain reason + breaking-change risk before adding/upgrading
+- Call out migration steps for major version bumps
+
+### Override
+- Any rule can be skipped if user explicitly requests — state the risk first
+
+---
+
+## Section 12: Known Issues & Deferred Risks
+
+**Source:** `/close-phase` auto-extracts from summary
+**Update:** Each `/close-phase` appends; user cleans up resolved entries
+
+```markdown
+| ID | Description | Source | Archive Ref | Status |
+|----|-------------|--------|-------------|--------|
+```
+
+**Constraint:** Table only — no prose. Excluded from 150-line CLAUDE.md budget.
+
+---
+
+## Section 13: Migration Journal
+
+**Source:** `/close-phase` appends after each completed change
+**Update:** Each `/close-phase`
+
+```
+### <change-id> ✅ (<date>)
+**Scope**: <1 sentence>
+**Output**: <X source files, Y test files>
+**Key Decisions**: <bullet list>
+**Lessons**: <bullet list>
+```
+
+Each entry: 10-20 lines. Total section: grows over time, pruned by moving entries > 3 months old to `archive/MIGRATION_HISTORY.md`.
+
+---
+
+## Generation Algorithm (for /onboard)
+
+```
+1. Run detect_ecosystem() → set $LANGUAGE, $FRAMEWORK
+2. Run detect_project_type() → match test-strategies/<type>.md
+3. Scan specs/prd/ → populate Active Changes table
+4. Prompt user: project description (if not auto-detected)
+5. Assemble CLAUDE.md from sections 1-13
+6. Write .claude/CLAUDE.md
+7. Report: "CLAUDE.md generated: <N> lines, <N> active changes, L<level>"
+```
