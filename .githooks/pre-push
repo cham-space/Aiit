@@ -1,0 +1,255 @@
+#!/bin/bash
+# ============================================================
+# AI Development Base — pre-push hook
+# .githooks/pre-push
+#
+# Runs on `git push`.  Check chain:
+#   1. UNIT_TEST   — npm test / pytest / go test / cargo test
+#   2. COVERAGE    — warn about threshold (default 80%)
+#   3. SECURITY    — semgrep scan + npm audit
+#   4. CONTRACT    — oasdiff breaking for specs/api/*.yaml
+#
+# Each check is gated by hook_enabled "CHECK_NAME".
+# Tracks errors via HAS_ERROR; exits 1 if any check fails.
+# ============================================================
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/lib/utils.sh"
+
+set +e
+
+HAS_ERROR=0
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+
+echo ""
+echo "=============================================="
+echo "  AI Development Base — pre-push checks"
+echo "=============================================="
+echo ""
+
+# Detect the ecosystem(s) present in the repo
+ECOSYSTEM=$(detect_ecosystem)
+
+# --------------------------------------------------------------------
+# 1. UNIT_TEST
+# --------------------------------------------------------------------
+if hook_enabled "UNIT_TEST"; then
+  echo "--- [1/4] UNIT_TEST -------------------------------------"
+
+  found_runner=0
+
+  if echo "$ECOSYSTEM" | grep -q "npm"; then
+    if [[ -f "package.json" ]]; then
+      # Check whether a test script is defined
+      if node -e "const p=require('./package.json');process.exit(p.scripts&&p.scripts.test?0:1)" 2>/dev/null; then
+        echo "  Running: npm test"
+        npm test 2>&1 || {
+          fail_msg "UNIT_TEST (npm test) failed"
+          HAS_ERROR=1
+        }
+        if [[ $HAS_ERROR -eq 0 ]]; then
+          pass_msg "UNIT_TEST (npm test) passed"
+        fi
+        found_runner=1
+      else
+        warn_msg "No 'test' script in package.json — skipping npm test"
+      fi
+    fi
+  fi
+
+  if echo "$ECOSYSTEM" | grep -q "python"; then
+    if command -v pytest &>/dev/null; then
+      echo "  Running: pytest"
+      pytest 2>&1 || {
+        fail_msg "UNIT_TEST (pytest) failed"
+        HAS_ERROR=1
+      }
+      if [[ $HAS_ERROR -eq 0 ]]; then
+        pass_msg "UNIT_TEST (pytest) passed"
+      fi
+      found_runner=1
+    fi
+  fi
+
+  if echo "$ECOSYSTEM" | grep -q "go"; then
+    if command -v go &>/dev/null; then
+      echo "  Running: go test ./..."
+      go test ./... 2>&1 || {
+        fail_msg "UNIT_TEST (go test) failed"
+        HAS_ERROR=1
+      }
+      if [[ $HAS_ERROR -eq 0 ]]; then
+        pass_msg "UNIT_TEST (go test) passed"
+      fi
+      found_runner=1
+    fi
+  fi
+
+  if echo "$ECOSYSTEM" | grep -q "rust"; then
+    if command -v cargo &>/dev/null; then
+      echo "  Running: cargo test"
+      cargo test 2>&1 || {
+        fail_msg "UNIT_TEST (cargo test) failed"
+        HAS_ERROR=1
+      }
+      if [[ $HAS_ERROR -eq 0 ]]; then
+        pass_msg "UNIT_TEST (cargo test) passed"
+      fi
+      found_runner=1
+    fi
+  fi
+
+  if [[ $found_runner -eq 0 ]]; then
+    warn_msg "UNIT_TEST — no test runner found for detected ecosystem"
+  fi
+fi
+
+# --------------------------------------------------------------------
+# 2. COVERAGE
+# --------------------------------------------------------------------
+if hook_enabled "COVERAGE"; then
+  echo ""
+  echo "--- [2/4] COVERAGE --------------------------------------"
+
+  # Read threshold from .githooks/config or default to 80
+  COVERAGE_THRESHOLD="${HOOK_COVERAGE_THRESHOLD:-80}"
+
+  # Attempt to detect coverage from common tools
+  cov_pct=""
+
+  if echo "$ECOSYSTEM" | grep -q "npm"; then
+    # Look for coverage/coverage-summary.json (common for istanbul-based tools)
+    if [[ -f "coverage/coverage-summary.json" ]]; then
+      cov_pct=$(node -e "const c=require('./coverage/coverage-summary.json');const t=c.total;if(!t)process.exit(1);const pct=t.lines?t.lines.pct:0;console.log(Math.round(pct));" 2>/dev/null || echo "")
+    fi
+  fi
+
+  if echo "$ECOSYSTEM" | grep -q "python"; then
+    # Check for coverage.xml (pytest-cov) or .coverage
+    if [[ -f "coverage.xml" ]]; then
+      cov_pct=$(python3 -c "
+import xml.etree.ElementTree as ET
+try:
+    tree = ET.parse('coverage.xml')
+    root = tree.getroot()
+    line_rate = float(root.attrib.get('line-rate', 0))
+    print(int(round(line_rate * 100)))
+except: pass" 2>/dev/null || echo "")
+    fi
+  fi
+
+  if [[ -n "$cov_pct" ]]; then
+    echo "  Detected coverage: ${cov_pct}%  (threshold: ${COVERAGE_THRESHOLD}%)"
+    if [[ "$cov_pct" -lt "$COVERAGE_THRESHOLD" ]]; then
+      fail_msg "COVERAGE (${cov_pct}%) is below threshold (${COVERAGE_THRESHOLD}%)"
+      HAS_ERROR=1
+    else
+      pass_msg "COVERAGE (${cov_pct}%) meets threshold (${COVERAGE_THRESHOLD}%)"
+    fi
+  else
+    warn_msg "COVERAGE — no coverage report found.  Consider running tests with coverage before push."
+  fi
+fi
+
+# --------------------------------------------------------------------
+# 3. SECURITY
+# --------------------------------------------------------------------
+if hook_enabled "SECURITY"; then
+  echo ""
+  echo "--- [3/4] SECURITY --------------------------------------"
+
+  # semgrep scan
+  if command -v semgrep &>/dev/null; then
+    echo "  Running semgrep --config=auto..."
+    semgrep --config=auto --quiet 2>&1 || {
+      fail_msg "SECURITY (semgrep) found issues"
+      HAS_ERROR=1
+    }
+    if [[ $HAS_ERROR -eq 0 ]]; then
+      pass_msg "SECURITY (semgrep) passed"
+    fi
+  else
+    warn_msg "semgrep not found — skipping SAST scan"
+  fi
+
+  # npm audit (only if package.json exists)
+  if [[ -f "package.json" ]]; then
+    if command -v npm &>/dev/null; then
+      echo "  Running npm audit..."
+      # npm audit returns non-zero when vulnerabilities are found;
+      # we treat medium+ severity as failure.
+      npm audit --audit-level=moderate 2>&1 || {
+        fail_msg "SECURITY (npm audit) found moderate-or-higher vulnerabilities"
+        HAS_ERROR=1
+      }
+      if [[ $HAS_ERROR -eq 0 ]]; then
+        pass_msg "SECURITY (npm audit) passed"
+      fi
+    else
+      warn_msg "npm not found — skipping npm audit"
+    fi
+  fi
+fi
+
+# --------------------------------------------------------------------
+# 4. CONTRACT
+# --------------------------------------------------------------------
+if hook_enabled "CONTRACT"; then
+  echo ""
+  echo "--- [4/4] CONTRACT --------------------------------------"
+
+  SPEC_API_DIR="specs/api"
+  if [[ -d "$SPEC_API_DIR" ]]; then
+    yaml_files=$(find "$SPEC_API_DIR" -maxdepth 1 -name '*.yaml' -o -name '*.yml' 2>/dev/null || true)
+    if [[ -n "$yaml_files" ]]; then
+      if command -v oasdiff &>/dev/null; then
+        # For each OpenAPI spec, compare against the base branch's version
+        BASE_BRANCH="origin/main"
+        for spec_file in $yaml_files; do
+          echo "  Checking breaking changes in $spec_file..."
+          # Extract base version from git show
+          base_spec=$(git show "${BASE_BRANCH}:${spec_file}" 2>/dev/null || true)
+          if [[ -z "$base_spec" ]]; then
+            warn_msg "CONTRACT — no base version of $spec_file in ${BASE_BRANCH}; skipping"
+            continue
+          fi
+          # Write base spec to a temp file
+          tmp_base=$(mktemp /tmp/oasdiff_base.XXXXXX.yaml)
+          echo "$base_spec" > "$tmp_base"
+          oasdiff breaking "$tmp_base" "$spec_file" 2>&1 || {
+            fail_msg "CONTRACT (oasdiff) found breaking changes in $spec_file"
+            HAS_ERROR=1
+          }
+          rm -f "$tmp_base"
+          if [[ $HAS_ERROR -eq 0 ]]; then
+            pass_msg "CONTRACT (oasdiff) no breaking changes in $spec_file"
+          fi
+        done
+      else
+        warn_msg "oasdiff not found — skipping contract check. Install: go install github.com/tufin/oasdiff/cmd/oasdiff@latest"
+      fi
+    else
+      pass_msg "CONTRACT — no OpenAPI specs found in $SPEC_API_DIR"
+    fi
+  else
+    pass_msg "CONTRACT — $SPEC_API_DIR does not exist; nothing to check"
+  fi
+fi
+
+# --------------------------------------------------------------------
+# Final summary
+# --------------------------------------------------------------------
+echo ""
+echo "=============================================="
+if [[ $HAS_ERROR -eq 0 ]]; then
+  pass_msg "All pre-push checks passed!"
+  echo "=============================================="
+  echo ""
+  exit 0
+else
+  fail_msg "One or more pre-push checks FAILED.  Please fix the issues above and try again."
+  echo "=============================================="
+  echo ""
+  exit 1
+fi

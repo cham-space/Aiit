@@ -1,0 +1,18 @@
+# .gitleaks.toml — Secret detection configuration
+title = "AI Development Base Gitleaks Config"
+
+[allowlist]
+  description = "Global allowlist"
+  paths = [
+    '''node_modules''',
+    '''\.git''',
+    '''\.github''',
+    '''archive/''',
+    '''\.gitleaks\.toml''',
+  ]
+
+[[rules]]
+  id = "generic-api-key"
+  description = "Generic API Key"
+  regex = '''(?i)(api[_-]?key|secret|token|password|auth)["']?\s*[:=]\s*["'][a-zA-Z0-9_\-\.]{20,}["']'''
+  tags = ["apikey", "secret"]

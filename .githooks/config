@@ -1,0 +1,15 @@
+# .githooks/config — Toggle individual hook checks per project
+# Set to 0 to disable a check, 1 to enable, or leave unset (default=on)
+
+HOOK_FORMAT=1
+HOOK_LINT=1
+HOOK_TYPE_CHECK=1
+HOOK_SECRET_SCAN=1
+HOOK_TDD_GATE=1
+HOOK_UNIT_TEST=1
+HOOK_SECURITY=1
+HOOK_CONTRACT=1
+HOOK_COVERAGE=1
+
+# Coverage threshold percentage
+COVERAGE_THRESHOLD=80

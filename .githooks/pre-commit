@@ -1,0 +1,281 @@
+#!/bin/bash
+# ============================================================
+# AI Development Base — pre-commit hook
+# .githooks/pre-commit
+#
+# Runs on `git commit`.  Operates on staged files only.
+# Check chain:
+#   1. FORMAT      — prettier (js/ts/jsx/tsx) / ruff format (python)
+#   2. LINT        — eslint (js/ts) / ruff check (python)
+#   3. TYPE_CHECK  — tsc --noEmit (ts/tsx) / mypy (python)
+#   4. SECRET_SCAN — gitleaks detect
+#   5. TDD_GATE    — staged source files must have staged test files
+#
+# Each check is gated by hook_enabled "CHECK_NAME".
+# Tracks errors via HAS_ERROR; exits 1 if any check fails.
+# ============================================================
+set -euo pipefail
+
+# Resolve the directory containing *this* script, then source utils.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/lib/utils.sh"
+
+# We want to continue through all checks even if one fails, so temporarily
+# relax -e for the body of the hook.  We restore it at the end.
+set +e
+
+HAS_ERROR=0
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+
+echo ""
+echo "=============================================="
+echo "  AI Development Base — pre-commit checks"
+echo "=============================================="
+echo ""
+
+# --------------------------------------------------------------------
+# 1. FORMAT
+# --------------------------------------------------------------------
+if hook_enabled "FORMAT"; then
+  echo "--- [1/5] FORMAT ----------------------------------------"
+
+  STAGED_JS_TS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(js|ts|jsx|tsx)$' || true)
+  STAGED_PY=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.py$' || true)
+
+  # prettier for JavaScript / TypeScript
+  if [[ -n "$STAGED_JS_TS" ]]; then
+    if command -v prettier &>/dev/null; then
+      echo "  Running prettier on staged JS/TS files..."
+      # Write formatted output back to the staged files (we only check
+      # that formatting is correct; actual rewrite happens via
+      # prettier --write but we re-add below if anything changed).
+      prettier --write $STAGED_JS_TS >/dev/null 2>&1
+      # Re-add any files prettier changed so they are included in the commit
+      for f in $STAGED_JS_TS; do
+        git add "$f" 2>/dev/null || true
+      done
+      pass_msg "FORMAT (prettier) passed"
+    else
+      warn_msg "prettier not found — skipping JS/TS formatting"
+    fi
+  fi
+
+  # ruff format for Python
+  if [[ -n "$STAGED_PY" ]]; then
+    if command -v ruff &>/dev/null; then
+      echo "  Running ruff format on staged Python files..."
+      ruff format $STAGED_PY 2>&1 || {
+        fail_msg "FORMAT (ruff format) failed"
+        HAS_ERROR=1
+      }
+      # Re-add any files ruff changed
+      for f in $STAGED_PY; do
+        git add "$f" 2>/dev/null || true
+      done
+      if [[ $HAS_ERROR -eq 0 ]]; then
+        pass_msg "FORMAT (ruff format) passed"
+      fi
+    else
+      warn_msg "ruff not found — skipping Python formatting"
+    fi
+  fi
+
+  if [[ -z "$STAGED_JS_TS" && -z "$STAGED_PY" ]]; then
+    pass_msg "FORMAT — no relevant staged files to format"
+  fi
+fi
+
+# --------------------------------------------------------------------
+# 2. LINT
+# --------------------------------------------------------------------
+if hook_enabled "LINT"; then
+  echo ""
+  echo "--- [2/5] LINT ------------------------------------------"
+
+  STAGED_JS_TS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(js|ts|jsx|tsx)$' || true)
+  STAGED_PY=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.py$' || true)
+
+  # eslint for JavaScript / TypeScript
+  if [[ -n "$STAGED_JS_TS" ]]; then
+    if command -v eslint &>/dev/null; then
+      echo "  Running eslint on staged JS/TS files..."
+      eslint $STAGED_JS_TS 2>&1 || {
+        fail_msg "LINT (eslint) found issues"
+        HAS_ERROR=1
+      }
+      if [[ $HAS_ERROR -eq 0 ]]; then
+        pass_msg "LINT (eslint) passed"
+      fi
+    else
+      warn_msg "eslint not found — skipping JS/TS lint"
+    fi
+  fi
+
+  # ruff check for Python
+  if [[ -n "$STAGED_PY" ]]; then
+    if command -v ruff &>/dev/null; then
+      echo "  Running ruff check on staged Python files..."
+      ruff check $STAGED_PY 2>&1 || {
+        fail_msg "LINT (ruff check) found issues"
+        HAS_ERROR=1
+      }
+      if [[ $HAS_ERROR -eq 0 ]]; then
+        pass_msg "LINT (ruff check) passed"
+      fi
+    else
+      warn_msg "ruff not found — skipping Python lint"
+    fi
+  fi
+
+  if [[ -z "$STAGED_JS_TS" && -z "$STAGED_PY" ]]; then
+    pass_msg "LINT — no relevant staged files to lint"
+  fi
+fi
+
+# --------------------------------------------------------------------
+# 3. TYPE_CHECK
+# --------------------------------------------------------------------
+if hook_enabled "TYPE_CHECK"; then
+  echo ""
+  echo "--- [3/5] TYPE_CHECK ------------------------------------"
+
+  STAGED_TS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' || true)
+  STAGED_PY=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.py$' || true)
+
+  # tsc --noEmit for TypeScript
+  if [[ -n "$STAGED_TS" ]]; then
+    if command -v tsc &>/dev/null && [[ -f "tsconfig.json" ]]; then
+      echo "  Running tsc --noEmit..."
+      tsc --noEmit 2>&1 || {
+        fail_msg "TYPE_CHECK (tsc) found type errors"
+        HAS_ERROR=1
+      }
+      if [[ $HAS_ERROR -eq 0 ]]; then
+        pass_msg "TYPE_CHECK (tsc) passed"
+      fi
+    else
+      warn_msg "tsc / tsconfig.json not found — skipping TypeScript type check"
+    fi
+  fi
+
+  # mypy for Python
+  if [[ -n "$STAGED_PY" ]]; then
+    if command -v mypy &>/dev/null; then
+      echo "  Running mypy on staged Python files..."
+      mypy $STAGED_PY 2>&1 || {
+        fail_msg "TYPE_CHECK (mypy) found type errors"
+        HAS_ERROR=1
+      }
+      if [[ $HAS_ERROR -eq 0 ]]; then
+        pass_msg "TYPE_CHECK (mypy) passed"
+      fi
+    else
+      warn_msg "mypy not found — skipping Python type check"
+    fi
+  fi
+
+  if [[ -z "$STAGED_TS" && -z "$STAGED_PY" ]]; then
+    pass_msg "TYPE_CHECK — no relevant staged files for type checking"
+  fi
+fi
+
+# --------------------------------------------------------------------
+# 4. SECRET_SCAN
+# --------------------------------------------------------------------
+if hook_enabled "SECRET_SCAN"; then
+  echo ""
+  echo "--- [4/5] SECRET_SCAN -----------------------------------"
+
+  if command -v gitleaks &>/dev/null; then
+    echo "  Running gitleaks detect..."
+    gitleaks detect --verbose 2>&1 || {
+      fail_msg "SECRET_SCAN (gitleaks) found potential secrets"
+      HAS_ERROR=1
+    }
+    if [[ $HAS_ERROR -eq 0 ]]; then
+      pass_msg "SECRET_SCAN (gitleaks) passed"
+    fi
+  else
+    warn_msg "gitleaks not found — skipping secret scan"
+  fi
+fi
+
+# --------------------------------------------------------------------
+# 5. TDD_GATE
+# --------------------------------------------------------------------
+if hook_enabled "TDD_GATE"; then
+  echo ""
+  echo "--- [5/5] TDD_GATE --------------------------------------"
+
+  # Collect staged source files (not test files themselves).
+  STAGED_SRC=$(git diff --cached --name-only --diff-filter=ACM \
+    | grep -v '/test/' \
+    | grep -v '/tests/' \
+    | grep -v '/spec/' \
+    | grep -v '/__tests__/' \
+    | grep -v '\.test\.' \
+    | grep -v '\.spec\.' \
+    | grep -v '^\.githooks/' \
+    || true)
+
+  # Collect ALL staged files (for matching purposes).
+  ALL_STAGED=$(git diff --cached --name-only --diff-filter=ACM || true)
+
+  MISSING_TESTS=""
+
+  for src_file in $STAGED_SRC; do
+    # Derive expected test file names
+    dir_name=$(dirname "$src_file")
+    base_name=$(basename "$src_file")
+    name_no_ext="${base_name%.*}"
+
+    # Check common test file naming conventions
+    found=0
+    for test_pattern in \
+      "${dir_name}/test_${base_name}" \
+      "${dir_name}/${name_no_ext}.test.${base_name##*.}" \
+      "${dir_name}/${name_no_ext}.spec.${base_name##*.}" \
+      "${dir_name}/__tests__/${base_name}" \
+      "tests/${src_file}"
+    do
+      if echo "$ALL_STAGED" | grep -qF "$test_pattern"; then
+        found=1
+        break
+      fi
+    done
+
+    if [[ $found -eq 0 ]]; then
+      MISSING_TESTS="${MISSING_TESTS}  ${src_file}\n"
+    fi
+  done
+
+  if [[ -n "$MISSING_TESTS" ]]; then
+    fail_msg "TDD_GATE: source files staged without test files:"
+    echo -e "$MISSING_TESTS"
+    echo "  Please stage corresponding test files or add HOOK_TDD_GATE=0 in .githooks/config."
+    HAS_ERROR=1
+  else
+    if [[ -z "$STAGED_SRC" ]]; then
+      pass_msg "TDD_GATE — no source files to check"
+    else
+      pass_msg "TDD_GATE passed — all staged source files have test coverage"
+    fi
+  fi
+fi
+
+# --------------------------------------------------------------------
+# Final summary
+# --------------------------------------------------------------------
+echo ""
+echo "=============================================="
+if [[ $HAS_ERROR -eq 0 ]]; then
+  pass_msg "All pre-commit checks passed!"
+  echo "=============================================="
+  echo ""
+  exit 0
+else
+  fail_msg "One or more pre-commit checks FAILED.  Please fix the issues above and try again."
+  echo "=============================================="
+  echo ""
+  exit 1
+fi

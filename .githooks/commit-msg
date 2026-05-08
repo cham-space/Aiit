@@ -1,0 +1,101 @@
+#!/bin/bash
+# ============================================================
+# AI Development Base — commit-msg hook
+# .githooks/commit-msg
+#
+# Validates commit messages follow the Conventional Commits spec.
+#
+# Pattern:
+#   ^(type)(\(scope\))?: .{1,}
+#
+#   where type is one of:
+#     feat, fix, docs, style, refactor, perf, test,
+#     chore, ci, build, revert
+#
+#   scope is optional, alphanumeric + underscore + hyphen.
+#
+#   The colon-space ":\s" and at least one character of
+#   description is required.
+#
+# Reads commit message from $1 (the file path passed by git).
+# Exits 1 with a helpful message if invalid, 0 if valid.
+# ============================================================
+set -euo pipefail
+
+COMMIT_MSG_FILE="$1"
+
+# Ensure the file exists
+if [[ ! -f "$COMMIT_MSG_FILE" ]]; then
+  echo "ERROR: commit message file '$COMMIT_MSG_FILE' not found."
+  exit 1
+fi
+
+COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
+
+# ---------------------------------------------------------
+# Conventional Commits regex
+# ---------------------------------------------------------
+# ^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)
+# (\([a-zA-Z0-9_-]+\))?
+# :[ ].{1,}
+# ---------------------------------------------------------
+PATTERN='^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)(\([a-zA-Z0-9_-]+\))?: .{1,}'
+
+if [[ "$COMMIT_MSG" =~ $PATTERN ]]; then
+  exit 0
+fi
+
+# --- Invalid — print helpful error ---------------------------------
+cat <<EOF
+
+===========================================================
+  INVALID COMMIT MESSAGE
+===========================================================
+
+Your commit message does not follow the Conventional Commits
+format required by this project.
+
+  FORMAT:
+    <type>(<optional scope>): <short description>
+
+  Allowed types:
+    feat     — a new feature
+    fix      — a bug fix
+    docs     — documentation changes
+    style    — formatting, linting (no logic change)
+    refactor — code restructuring (no feat/fix)
+    perf     — performance improvements
+    test     — adding or updating tests
+    chore    — maintenance tasks
+    ci       — CI/CD pipeline changes
+    build    — build system or dependencies
+    revert   — revert a previous commit
+
+  Rules:
+    - Type is required (choose from the list above).
+    - Scope is optional, enclosed in parentheses.
+    - Type/scope and description MUST be separated by ": "
+      (colon followed by a space).
+    - Description must be at least one character.
+
+  VALID EXAMPLES:
+    feat(auth): add login with OAuth2
+    fix: resolve null-pointer in user profile
+    docs(readme): update installation section
+    refactor(api): extract validation middleware
+    chore: bump dependencies
+
+  INVALID EXAMPLES:
+    Add login feature              (no type prefix)
+    feat:add login                 (missing space after colon)
+    feature: add login             (invalid type)
+    feat(): add login              (empty parentheses)
+
+===========================================================
+
+Your commit message was:
+  $COMMIT_MSG
+
+EOF
+
+exit 1

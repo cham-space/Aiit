@@ -1,0 +1,140 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(pytest *)",
+      "Bash(python3 *)",
+      "Bash(chmod *)",
+      "Bash(mkdir *)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:figma.com)",
+      "WebSearch(*)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git push --force *)",
+      "Bash(git reset --hard *)"
+    ]
+  },
+  "hooks": {
+    "pre-commit": ".githooks/pre-commit",
+    "commit-msg": ".githooks/commit-msg",
+    "pre-push": ".githooks/pre-push"
+  },
+  "enableLevel": "L2",
+  "projectLanguage": "",
+  "projectFramework": "",
+  "levels": {
+    "L0": {
+      "name": "Hotfix",
+      "description": "Emergency fix only, zero config",
+      "availableCommands": ["/hotfix", "/diagnose"],
+      "skills": ["systematic-debugging"],
+      "mcps": [],
+      "hooksEnabled": {
+        "pre-commit": ["SECRET_SCAN"],
+        "commit-msg": false,
+        "pre-push": false
+      },
+      "gatesEnabled": [],
+      "tddRequired": false,
+      "parallelAgents": false
+    },
+    "L1": {
+      "name": "Light",
+      "description": "Individual developer, local quality checks",
+      "availableCommands": ["/hotfix", "/diagnose", "/execute", "/close-phase"],
+      "skills": ["executing-plans", "TDD", "code-review", "verification-before-completion", "finishing-a-development-branch"],
+      "mcps": ["TypeScript LSP", "Serena"],
+      "hooksEnabled": {
+        "pre-commit": ["FORMAT", "LINT", "TYPE_CHECK", "SECRET_SCAN"],
+        "commit-msg": true,
+        "pre-push": ["UNIT_TEST", "COVERAGE"]
+      },
+      "gatesEnabled": ["directory_structure", "hook_activation", "tdd", "file_scope", "coverage"],
+      "tddRequired": false,
+      "parallelAgents": false
+    },
+    "L2": {
+      "name": "Standard",
+      "description": "Team workflow, full skill chain + MCPs + CI",
+      "availableCommands": ["/discover", "/execute", "/hotfix", "/diagnose", "/close-phase", "/onboard"],
+      "skills": ["brainstorming", "writing-plans", "api-contract-first", "frontend-design", "executing-plans", "TDD", "subagent-driven-development", "dispatching-parallel-agents", "code-review", "verification-before-completion", "release-builder", "finishing-a-development-branch"],
+      "mcps": ["Playwright", "Figma", "Serena", "TypeScript LSP"],
+      "hooksEnabled": {
+        "pre-commit": ["FORMAT", "LINT", "TYPE_CHECK", "SECRET_SCAN", "TDD_GATE"],
+        "commit-msg": true,
+        "pre-push": ["UNIT_TEST", "COVERAGE", "SECURITY", "CONTRACT"]
+      },
+      "gatesEnabled": ["all"],
+      "tddRequired": true,
+      "parallelAgents": true
+    },
+    "L3": {
+      "name": "Full",
+      "description": "Enterprise: all modules + metrics + evolution",
+      "availableCommands": ["/discover", "/execute", "/hotfix", "/diagnose", "/close-phase", "/onboard"],
+      "skills": ["brainstorming", "design-brief-builder", "writing-plans", "api-contract-first", "frontend-design", "executing-plans", "TDD", "subagent-driven-development", "dispatching-parallel-agents", "code-review", "verification-before-completion", "release-builder", "finishing-a-development-branch", "evolution-engine", "feedback-writer"],
+      "mcps": ["Playwright", "Figma", "Serena", "TypeScript LSP"],
+      "hooksEnabled": {
+        "pre-commit": ["FORMAT", "LINT", "TYPE_CHECK", "SECRET_SCAN", "TDD_GATE"],
+        "commit-msg": true,
+        "pre-push": ["UNIT_TEST", "COVERAGE", "SECURITY", "CONTRACT"]
+      },
+      "gatesEnabled": ["all"],
+      "tddRequired": true,
+      "parallelAgents": true,
+      "features": {
+        "metrics": true,
+        "evolution": true,
+        "feedbackLoop": true,
+        "autoArchive": true
+      }
+    }
+  },
+  "phaseSkillMapping": {
+    "phase0": {
+      "skills": ["openspec:init"],
+      "mcps": ["Serena", "TypeScript LSP"],
+      "gates": ["directory_structure", "hook_activation"]
+    },
+    "phase1": {
+      "skills": ["brainstorming", "design-brief-builder", "openspec:validate"],
+      "mcps": ["Figma"],
+      "hooks": ["pre-spec-commit"],
+      "gates": ["prd_completeness", "testability"],
+      "entryCommand": "/discover"
+    },
+    "phase2": {
+      "skills": ["writing-plans", "api-contract-first", "frontend-design", "openspec:validate"],
+      "mcps": ["Serena", "TypeScript LSP", "Figma"],
+      "hooks": ["pre-plan-commit"],
+      "gates": ["task_granularity", "no_cyclic_deps", "spec_alignment"],
+      "autoTransition": true
+    },
+    "phase3": {
+      "skills": ["executing-plans", "TDD", "subagent-driven-development", "dispatching-parallel-agents", "openspec:diff"],
+      "mcps": ["TypeScript LSP", "Serena", "Playwright", "Figma"],
+      "hooks": ["pre-commit", "commit-msg", "post-write", "pre-push"],
+      "gates": ["tdd", "file_scope", "spec_drift", "coverage"],
+      "entryCommand": "/execute"
+    },
+    "phase4": {
+      "skills": ["verification-before-completion", "code-review", "openspec:validate"],
+      "mcps": ["Playwright", "Serena", "TypeScript LSP"],
+      "hooks": ["pre-push", "post-verify"],
+      "gates": ["contract", "security", "smoke_test", "coverage", "full_diagnostics"],
+      "autoTransition": true
+    },
+    "phase5": {
+      "skills": ["finishing-a-development-branch", "release-builder", "openspec:archive"],
+      "mcps": [],
+      "hooks": ["pre-merge", "post-merge"],
+      "gates": ["all_gates_pass", "destructive_op", "archive"],
+      "entryCommand": "/close-phase"
+    }
+  }
+}
