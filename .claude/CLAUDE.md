@@ -39,7 +39,12 @@ mvn clean package -DskipTests
 ```
 
 ## 活跃变更
-暂无活跃变更。运行 `/discover "你的想法"` 来创建第一个变更。
+暂无活跃变更。运行 `/discover "你的想法"` 来创建新的变更。
+
+## 已完成变更
+| Change ID | 概述 | 归档日期 |
+|-----------|------|----------|
+| 20260521-phase1-settle-monitor | 清分监控核心链路：巡检、预警、日报、Dashboard、Hook API、健康度、配置管理 | 2026-05-22 |
 
 ## 架构
 ```
@@ -47,7 +52,7 @@ yu-settle-service/
 ├── src/main/java/com/yu/settle/
 │   ├── Application.java              # 应用入口
 │   ├── schedule/SettleScheduler.java # 定时扫描调度
-│   ├── dao/                          # 数据访问层（8个DAO）
+│   ├── dao/                          # 数据访问层（10个DAO）
 │   │   ├── ReconciliationMasterDao   # eid_* 只读
 │   │   ├── MonitorSnapshotDao        # 快照表
 │   │   ├── AlertRuleDao              # 预警规则
@@ -60,7 +65,8 @@ yu-settle-service/
 │   │   ├── MonitorService            # 监控扫描
 │   │   ├── AlertService              # 预警判定
 │   │   ├── HealthService             # 健康度统计
-│   │   └── HookService               # 回调通知
+│   │   ├── HookService               # Hook API
+│   │   └── ConfigService             # 运维配置管理
 │   └── util/                         # 工具类
 │       ├── SettleConstant            # 系统常量
 │       ├── DateUtil                  # 日期工具
