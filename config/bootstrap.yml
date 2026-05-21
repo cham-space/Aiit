@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: yu-settle-service
+  cloud:
+    nacos:
+      discovery:
+        enabled: true
+        server-addr: 47.93.28.223:8848
+        namespace: 2096f036-1a21-41d1-a2b9-2ccffee13599
+        username: nacos
+        password: yn@20240122.nacos
+        group: DEFAULT_GROUP
+      config:
+        enabled: true
+        server-addr: 47.93.28.223:8848
+        namespace: 2096f036-1a21-41d1-a2b9-2ccffee13599
+        username: nacos
+        password: yn@20240122.nacos
+        group: DEFAULT_GROUP
+        file-extension: yml

@@ -1,0 +1,48 @@
+server:
+  port: 8080
+
+spring:
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+  cloud:
+    nacos:
+      discovery:
+        enabled: true
+      config:
+        enabled: true
+
+# ===== 数据库配置（凭据由 Nacos 配置中心下发，见命名空间 2096f036-1a21-41d1-a2b9-2ccffee13599/yu-settle-service.yml） =====
+settle:
+  db:
+    master:
+      url: jdbc:mysql://am-2ze971c528r07d56v167320o.ads.aliyuncs.com:3306/ynzyq_dc_eid_test?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      username: ${settle.db.master.username}
+      password: ${settle.db.master.password}
+    slave:
+      url: jdbc:mysql://am-2ze971c528r07d56v167320o.ads.aliyuncs.com:3306/ynzyq_dc_eid_test?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      username: ${settle.db.slave.username}
+      password: ${settle.db.slave.password}
+  admin:
+    token: ${settle.admin.token}
+
+# ===== Redis 配置 =====
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    password:
+    database: 0
+    pool:
+      max-total: 50
+      max-idle: 10
+      min-idle: 5
+      max-wait: 3000
+
+# ===== 阿里云短信配置 =====
+  sms:
+    access-key-id: ${ALIYUN_SMS_ACCESS_KEY_ID:}
+    access-key-secret: ${ALIYUN_SMS_ACCESS_KEY_SECRET:}
+    sign-name: 资金归集监控
+    template-code: ${ALIYUN_SMS_TEMPLATE_CODE:}
+
+# log4j2-spring.xml 在 classpath，Spring Boot 自动检测，无需显式指定
