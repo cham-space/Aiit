@@ -1,0 +1,62 @@
+# Plan Scope — 20260521-phase1-settle-monitor
+
+## 源文件（Phase 1 涉及的所有文件）
+
+### Controller
+- src/main/java/com/yu/settle/controller/MonitorController.java
+- src/main/java/com/yu/settle/controller/AlertController.java
+- src/main/java/com/yu/settle/controller/HealthController.java
+- src/main/java/com/yu/settle/controller/HookController.java
+- src/main/java/com/yu/settle/controller/OperatorController.java
+
+### Service
+- src/main/java/com/yu/settle/service/MonitorService.java
+- src/main/java/com/yu/settle/service/AlertService.java
+- src/main/java/com/yu/settle/service/HealthService.java
+- src/main/java/com/yu/settle/service/HookService.java
+- src/main/java/com/yu/settle/service/ConfigService.java
+
+### Schedule
+- src/main/java/com/yu/settle/schedule/SettleScheduler.java
+
+### DAO
+- src/main/java/com/yu/settle/dao/ReconciliationMasterDao.java
+- src/main/java/com/yu/settle/dao/MonitorSnapshotDao.java
+- src/main/java/com/yu/settle/dao/AlertRuleDao.java
+- src/main/java/com/yu/settle/dao/AlertRecordDao.java
+- src/main/java/com/yu/settle/dao/ChannelConfigDao.java
+- src/main/java/com/yu/settle/dao/NotifyGroupDao.java
+- src/main/java/com/yu/settle/dao/NotifyContactDao.java
+- src/main/java/com/yu/settle/dao/OperatorDao.java
+- src/main/java/com/yu/settle/dao/HookCallLogDao.java
+- src/main/java/com/yu/settle/dao/HealthMetricDao.java
+
+### Manage
+- src/main/java/com/yu/settle/manage/MonitorManage.java
+- src/main/java/com/yu/settle/manage/AlertManage.java
+- src/main/java/com/yu/settle/manage/ConfigManage.java
+- src/main/java/com/yu/settle/manage/HookManage.java
+
+### Model
+- src/main/java/com/yu/settle/model/*.java (11 个)
+
+### Util
+- src/main/java/com/yu/settle/util/SettleConstant.java
+- src/main/java/com/yu/settle/util/DateUtil.java
+- src/main/java/com/yu/settle/util/NotifyUtil.java
+
+### Config
+- config/bootstrap.yml
+- config/yu-settle-service.yml
+
+## 测试文件
+- src/test/java/com/yu/settle/util/SettleConstantTest.java
+- src/test/java/com/yu/settle/util/DateUtilTest.java
+- src/test/java/com/yu/settle/util/NotifyUtilTest.java
+- src/test/java/com/yu/settle/service/HookServiceTest.java
+- src/test/java/com/yu/settle/service/MonitorServiceTest.java
+- src/test/java/com/yu/settle/service/MonitorServiceDashboardTest.java
+- src/test/java/com/yu/settle/service/AlertServiceTest.java
+- src/test/java/com/yu/settle/service/AlertServiceTriggerTest.java
+- src/test/java/com/yu/settle/service/HealthServiceTest.java
+- src/test/java/com/yu/settle/service/ConfigServiceTest.java

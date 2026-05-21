@@ -322,7 +322,7 @@ gate_file_scope() {
 
   echo "  [GATE] File Scope Enforcement"
 
-  if [[ -f "$SCRIPT_DIR/lib/l2-checks.sh" ]]; then
+  if [[ -f "$GATES_LIB_DIR/l2-checks.sh" ]]; then
     echo "    File scope check delegated to L2 layer."
   fi
   echo "    All changed files must be within the plan scope."
