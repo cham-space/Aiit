@@ -19,11 +19,6 @@
       "Bash(git reset --hard *)"
     ]
   },
-  "hooks": {
-    "pre-commit": ".githooks/pre-commit",
-    "commit-msg": ".githooks/commit-msg",
-    "pre-push": ".githooks/pre-push"
-  },
   "enableLevel": "L2",
   "projectLanguage": "",
   "projectFramework": "",
