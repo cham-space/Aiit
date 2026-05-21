@@ -19,9 +19,10 @@
       "Bash(git reset --hard *)"
     ]
   },
-  "enableLevel": "L2",
-  "projectLanguage": "",
-  "projectFramework": "",
+  "enableLevel": "L3",
+  "role": "full-stack",
+  "projectLanguage": "java",
+  "projectFramework": "spring-boot",
   "levels": {
     "L0": {
       "name": "Hotfix",
