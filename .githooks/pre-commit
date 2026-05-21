@@ -215,6 +215,12 @@ if hook_enabled "TDD_GATE"; then
     | grep -v '/__tests__/' \
     | grep -v '\.test\.' \
     | grep -v '\.spec\.' \
+    | grep -v '\.md$' \
+    | grep -v '\.txt$' \
+    | grep -v '\.json$' \
+    | grep -v '\.yml$' \
+    | grep -v '\.yaml$' \
+    | grep -v '\.xml$' \
     | grep -v '^\.githooks/' \
     || true)
 
