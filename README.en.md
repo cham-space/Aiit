@@ -42,7 +42,7 @@ The base depends on the following components. Some require prior installation:
 | Component | Purpose | Required Level | Installation |
 |-----------|---------|---------------|--------------|
 | **Claude Code** | AI execution engine | All | `npm install -g @anthropic-ai/claude-code` |
-| **OpenSpec CLI** | Spec management | L1+ | `npm install -g @openspec/cli` |
+| **OpenSpec CLI** | Spec management | L1+ | `npm install -g @fission-ai/openspec` |
 | **Superpowers Plugin** | Process skills (brainstorming/writing-plans/TDD, etc.) | L1+ | In Claude Code: `/plugin install superpowers@claude-plugins-official` |
 | **Figma Plugin** | Design file reading | L2+ | `/plugin install figma@claude-plugins-official` |
 | **TypeScript LSP MCP** | TS type checking & diagnostics | L1+ | `npm install -g ts-language-mcp && claude mcp add --scope user typescript-lsp -- npx -y ts-language-mcp` |

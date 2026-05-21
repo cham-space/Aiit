@@ -40,7 +40,7 @@ AI Development Base 是一套**面向产研团队的标准化 AI 开发基础设
 | 组件 | 用途 | 适用级别 | 安装方式 |
 |------|------|---------|---------|
 | **Claude Code** | AI 执行引擎 | 全部 | `npm install -g @anthropic-ai/claude-code` |
-| **OpenSpec CLI** | 规格管理 | L1+ | `npm install -g @openspec/cli` |
+| **OpenSpec CLI** | 规格管理 | L1+ | `npm install -g @fission-ai/openspec` |
 | **Superpowers Plugin** | 流程技能（brainstorming/writing-plans/TDD 等） | L1+ | 在 Claude Code 中: `/plugin install superpowers@claude-plugins-official` |
 | **Figma Plugin** | 设计稿读取 | L2+ | `/plugin install figma@claude-plugins-official` |
 | **TypeScript LSP MCP** | TS 类型检查与诊断 | L1+ | `npm install -g ts-language-mcp && claude mcp add --scope user typescript-lsp -- npx -y ts-language-mcp` |
