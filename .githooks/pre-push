@@ -22,6 +22,11 @@ set +e
 HAS_ERROR=0
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 
+# Source project config if available
+if [[ -f "$ROOT_DIR/.githooks/config" ]]; then
+  source "$ROOT_DIR/.githooks/config"
+fi
+
 echo ""
 echo "=============================================="
 echo "  AI Development Base — pre-push checks"
