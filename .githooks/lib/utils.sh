@@ -49,6 +49,7 @@ detect_ecosystem() {
   if [[ -f "pyproject.toml" || -f "setup.py" ]]; then echo "python"; fi
   if [[ -f "go.mod" ]]; then echo "go"; fi
   if [[ -f "Cargo.toml" ]]; then echo "rust"; fi
+  if [[ -f "pom.xml" ]]; then echo "maven"; fi
 }
 
 # --- Output Helpers ---------------------------------------------------------

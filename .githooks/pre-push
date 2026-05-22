@@ -100,6 +100,20 @@ if hook_enabled "UNIT_TEST"; then
     fi
   fi
 
+  if echo "$ECOSYSTEM" | grep -q "maven"; then
+    if [[ -f "pom.xml" ]]; then
+      echo "  Running: mvn test"
+      mvn test 2>&1 || {
+        fail_msg "UNIT_TEST (mvn test) failed"
+        HAS_ERROR=1
+      }
+      if [[ $HAS_ERROR -eq 0 ]]; then
+        pass_msg "UNIT_TEST (mvn test) passed"
+      fi
+      found_runner=1
+    fi
+  fi
+
   if [[ $found_runner -eq 0 ]]; then
     warn_msg "UNIT_TEST — no test runner found for detected ecosystem"
   fi
@@ -136,6 +150,22 @@ try:
     line_rate = float(root.attrib.get('line-rate', 0))
     print(int(round(line_rate * 100)))
 except: pass" 2>/dev/null || echo "")
+    fi
+  fi
+
+  if echo "$ECOSYSTEM" | grep -q "maven"; then
+    if [[ -f "target/site/jacoco/jacoco.csv" ]]; then
+      cov_pct=$(python3 -c "
+import csv
+total_missed=0; total_covered=0
+with open('target/site/jacoco/jacoco.csv') as f:
+    reader=csv.DictReader(f)
+    for row in reader:
+        total_missed+=int(row['INSTRUCTION_MISSED'])
+        total_covered+=int(row['INSTRUCTION_COVERED'])
+total=total_missed+total_covered
+print(int(round(total_covered*100/total))) if total>0 else None
+" 2>/dev/null || echo "")
     fi
   fi
 
@@ -201,7 +231,7 @@ if hook_enabled "CONTRACT"; then
 
   SPEC_API_DIR="specs/api"
   if [[ -d "$SPEC_API_DIR" ]]; then
-    yaml_files=$(find "$SPEC_API_DIR" -maxdepth 1 -name '*.yaml' -o -name '*.yml' 2>/dev/null || true)
+    yaml_files=$(find "$SPEC_API_DIR" -maxdepth 1 \( -name '*.yaml' -o -name '*.yml' \) ! -name '_template*' 2>/dev/null || true)
     if [[ -n "$yaml_files" ]]; then
       if command -v oasdiff &>/dev/null; then
         # For each OpenAPI spec, compare against the base branch's version
