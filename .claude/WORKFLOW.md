@@ -192,14 +192,14 @@ When level ≥ L2 and ≥ 2 tasks have all dependencies satisfied:
 **Flow:**
 1. `finishing-a-development-branch` — merge strategy decision (merge/squash/rebase)
 2. `release-builder` — semver version + changelog + release note
-3. Pre-merge final defense — All-Gates-Pass summary + destructive op intercept
+3. Pre-merge final defense — Full Diagnostics summary + destructive op intercept
 4. Merge → main
 5. `openspec archive` → `archive/<change-id>/` (full change history)
 6. Feedback Loop (L3 only) — capture manual fixes → lint rules / spec templates
 
 **Output:** Code merged to main + `archive/<change-id>/` complete record
 
-**Gates:** All-Gates-Pass Gate, Destructive Op Gate, Archive Gate
+**Gates:** Full Diagnostics Gate, Destructive Op Gate, Archive Gate
 
 **Capabilities:**
 | Type | Name | Description |
@@ -221,7 +221,7 @@ When level ≥ L2 and ≥ 2 tasks have all dependencies satisfied:
 | Phase 2 | Phase 3 | Plan + specs committed; Task Granularity + No Cyclic Deps + Spec Alignment gates pass |
 | Phase 3 | Phase 4 | All tasks marked complete; TDD + File Scope + Spec Drift + Coverage gates pass |
 | Phase 4 | Phase 5 | All verify steps complete; Contract + Security + Smoke + Coverage + Diagnostics gates pass |
-| Phase 5 | Done | Merge to main; All-Gates-Pass + Destructive Op + Archive gates pass |
+| Phase 5 | Done | Merge to main; Full Diagnostics + Destructive Op + Archive gates pass |
 
 ### Level Capability Matrix
 
@@ -249,7 +249,7 @@ When level ≥ L2 and ≥ 2 tasks have all dependencies satisfied:
 
 | Layer | Content | Tools |
 |-------|---------|-------|
-| L1: Code Hygiene | format, lint, type-check, secret scan, commit format, test, security, contract | Prettier, ESLint, tsc, gitleaks, commitlint, semgrep, oasdiff |
+| L1: Code Hygiene | format, lint, type-check, secret scan, commit format, test, security, contract | Prettier, ESLint, tsc, gitleaks, semgrep, oasdiff |
 | L2: AI Safety | TDD gate, spec drift, file scope, permission boundary, diff review | openspec diff, Claude Code permissions |
 | L3: Evolution | quality metrics, feedback loop, frequency-driven rules | Custom scripts |
 
@@ -282,7 +282,7 @@ When level ≥ L2 and ≥ 2 tasks have all dependencies satisfied:
 | Figma | 1,2,3,4 | Design spec reference, visual regression comparison |
 | Playwright | 3,4 | E2E testing, smoke tests, screenshot capture |
 
-### Gate Inventory (18 gates)
+### Gate Inventory (17 gates)
 
 | Gate | Phase | Layer |
 |------|-------|-------|
@@ -301,6 +301,6 @@ When level ≥ L2 and ≥ 2 tasks have all dependencies satisfied:
 | Security Gate | 4 | L1 |
 | Smoke Test Gate | 4 | L1 |
 | Full Diagnostics Gate | 4 | L1 |
-| All-Gates-Pass | 5 | L1 |
+| Full Diagnostics | 5 | L1 |
 | Destructive Op Gate | 5 | L1 |
 | Archive Gate | 5 | L2 |

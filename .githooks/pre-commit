@@ -221,7 +221,12 @@ if hook_enabled "TDD_GATE"; then
     | grep -v '\.yml$' \
     | grep -v '\.yaml$' \
     | grep -v '\.xml$' \
+    | grep -v '\.template$' \
+    | grep -v '\.gitkeep$' \
+    | grep -v '\.gitignore$' \
     | grep -v '^\.githooks/' \
+    | grep -v '^\.github/' \
+    | grep -v '^\.claude/' \
     || true)
 
   # Collect ALL staged files (for matching purposes).

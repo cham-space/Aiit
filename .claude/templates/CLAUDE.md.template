@@ -6,7 +6,9 @@
 > - **Update trigger**: when this section gets refreshed
 > - **Constraint**: line limits, format rules
 >
-> The `/onboard` command reads these rules, executes auto-detection, prompts the user for missing info, and writes the final CLAUDE.md.
+> The `/onboard` command reads these rules, executes auto-detection, prompts the user for missing info, and writes the final `.claude/CLAUDE.md`.
+>
+> **Location:** `.claude/templates/CLAUDE.md.template` (not auto-loaded by Claude Code)
 
 ---
 

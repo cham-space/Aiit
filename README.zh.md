@@ -70,7 +70,7 @@ AI Development Base 是一套**面向产研团队的标准化 AI 开发基础设
 将以下目录复制到你的项目根目录：
 
 ```bash
-cp -r .claude/ .githooks/ .gitleaks.toml .commitlintrc.yaml CLAUDE.md specs/ /path/to/your/project/
+cp -r .claude/ .githooks/ .gitleaks.toml specs/ /path/to/your/project/
 ```
 
 然后在项目目录的 Claude Code 中输入 `/onboard`。
@@ -169,7 +169,7 @@ L2+：就绪任务自动并行执行（独立 Agent + 独立 worktree）。
 
 | 层 | 内容 | 工具 | 成熟度 |
 |----|------|------|--------|
-| **L1 代码卫生** | format · lint · type-check · secret scan · test · security · contract | Prettier/ESLint/tsc/gitleaks/commitlint/semgrep/oasdiff | 成熟 |
+| **L1 代码卫生** | format · lint · type-check · secret scan · test · security · contract | Prettier/ESLint/tsc/gitleaks/semgrep/oasdiff | 成熟 |
 | **L2 AI 安全** | TDD gate · spec drift · file scope · permission boundary | openspec diff / Claude Code 原生 | 快速成熟中 |
 | **L3 智能演化** | 质量指标 · Feedback Loop · 频率驱动规则升级 | 自定义 | 前沿 |
 
@@ -181,17 +181,15 @@ L2+：就绪任务自动并行执行（独立 Agent + 独立 worktree）。
 
 | 文件/目录 | 类型 | 说明 |
 |----------|------|------|
-| `CLAUDE.md` | 生成规则 | 定义 CLAUDE.md 的自动生成规则，由 `/onboard` 读取并执行 |
 | `.claude/WORKFLOW.md` | 流程手册 | 完整的五阶段流程说明、Gate 清单、Skill/MCP 映射 |
 | `.claude/settings.json` | 配置文件 | 权限声明、L0-L3 级别定义、阶段→Skill→Gate 映射 |
 | `.claude/skills/openspec.md` | Skill 定义 | OpenSpec 操作的 Skill 封装（init/validate/diff/archive） |
 | `.claude/commands/` | 命令定义 | 6 个斜杠命令（discover/execute/hotfix/diagnose/close-phase/onboard） |
 | `.claude/reference/` | 参考文档 | 按需读取：spec-drift-guide + 6 种 test-strategies |
 | `.githooks/` | Git Hook | pre-commit / commit-msg / pre-push + 共享脚本库 |
-| `.githooks/lib/gates.sh` | Gate 引擎 | 18 个质量 Gate 函数 + run_phase_gates 调度器 |
+| `.githooks/lib/gates.sh` | Gate 引擎 | 17 个质量 Gate 函数 + run_phase_gates 调度器 |
 | `.githooks/lib/l2-checks.sh` | AI 安全层 | spec drift / file scope / permission / destructive op 检测 |
 | `.gitleaks.toml` | 安全配置 | 密钥扫描规则与白名单 |
-| `.commitlintrc.yaml` | 提交规范 | Conventional Commits 格式校验规则 |
 | `specs/` | 规格模板 | PRD / API / Plan / Design / Test / Release 的 OpenSpec 模板 |
 
 ### 非基座文件（说明性）
@@ -203,10 +201,8 @@ L2+：就绪任务自动并行执行（独立 Agent + 独立 worktree）。
 | `README.en.md` | 说明文档 | 英文使用指南 |
 | `docs/superpowers/specs/` | 设计文档 | 本基座的设计规格文档（归档参考） |
 | `docs/superpowers/plans/` | 实施计划 | 本基座的实施计划文档（归档参考） |
-| `.agents/` | 运行时目录 | AI 运行过程中自动产生的 plan/spec/review/report 等临时文件，自动管理，无需手动操作 |
 | `archive/` | 历史归档 | 已完成变更的完整记录，由 `/close-phase` 自动写入 |
-| `.github/workflows/` | CI 配置 | GitHub Actions 流水线（CI Gate），L2+ 使用 |
-| `.gitignore` | Git 配置 | 忽略规则（如有） |
+| `.gitignore` | Git 配置 | 忽略规则 |
 
 ---
 

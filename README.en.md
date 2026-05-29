@@ -72,7 +72,7 @@ Interactive flow: choose language → role → project state → enablement leve
 Copy these directories into your project root:
 
 ```bash
-cp -r .claude/ .githooks/ .gitleaks.toml .commitlintrc.yaml CLAUDE.md specs/ /path/to/your/project/
+cp -r .claude/ .githooks/ .gitleaks.toml specs/ /path/to/your/project/
 ```
 
 Then run `/onboard` in Claude Code from the project directory.
@@ -173,7 +173,7 @@ Run `/close-phase`. Pre-conditions verified → Migration Journal extraction →
 
 | Layer | Content | Tools | Maturity |
 |-------|---------|-------|----------|
-| **L1 Code Hygiene** | format · lint · type-check · secret scan · test · security · contract | Prettier/ESLint/tsc/gitleaks/commitlint/semgrep/oasdiff | Mature |
+| **L1 Code Hygiene** | format · lint · type-check · secret scan · test · security · contract | Prettier/ESLint/tsc/gitleaks/semgrep/oasdiff | Mature |
 | **L2 AI Safety** | TDD gate · spec drift · file scope · permission boundary | openspec diff / Claude Code native | Maturing fast |
 | **L3 Intelligence Evolution** | Quality metrics · Feedback Loop · frequency-driven rule upgrade | Custom | Cutting edge |
 
@@ -185,17 +185,15 @@ Run `/close-phase`. Pre-conditions verified → Migration Journal extraction →
 
 | File/Dir | Type | Description |
 |----------|------|-------------|
-| `CLAUDE.md` | Generation rules | Defines auto-generation rules for CLAUDE.md, read and executed by `/onboard` |
 | `.claude/WORKFLOW.md` | Process handbook | Complete five-phase process docs, Gate inventory, Skill/MCP mappings |
 | `.claude/settings.json` | Config | Permission declarations, L0-L3 level definitions, phase→skill→gate mappings |
 | `.claude/skills/openspec.md` | Skill definition | OpenSpec operations skill (init/validate/diff/archive) |
 | `.claude/commands/` | Command definitions | 6 slash commands (discover/execute/hotfix/diagnose/close-phase/onboard) |
 | `.claude/reference/` | Reference docs | On-demand reading: spec-drift-guide + 6 test-strategies |
 | `.githooks/` | Git hooks | pre-commit / commit-msg / pre-push + shared script libraries |
-| `.githooks/lib/gates.sh` | Gate engine | 18 quality Gate functions + run_phase_gates dispatcher |
+| `.githooks/lib/gates.sh` | Gate engine | 17 quality Gate functions + run_phase_gates dispatcher |
 | `.githooks/lib/l2-checks.sh` | AI safety layer | spec drift / file scope / permission / destructive op detection |
 | `.gitleaks.toml` | Security config | Secret scanning rules and allowlists |
-| `.commitlintrc.yaml` | Commit standard | Conventional Commits format validation rules |
 | `specs/` | Spec templates | OpenSpec templates for PRD / API / Plan / Design / Test / Release |
 
 ### Non-Base Files (Reference Only)
@@ -207,10 +205,8 @@ Run `/close-phase`. Pre-conditions verified → Migration Journal extraction →
 | `README.en.md` | Documentation | English user guide (this file) |
 | `docs/superpowers/specs/` | Design docs | Design specification for this base (archival reference) |
 | `docs/superpowers/plans/` | Implementation plans | Implementation plan for this base (archival reference) |
-| `.agents/` | Runtime directory | Auto-generated plan/spec/review/report artifacts during AI execution; auto-managed, no manual operation needed |
 | `archive/` | History archive | Complete records of finished changes, auto-written by `/close-phase` |
-| `.github/workflows/` | CI config | GitHub Actions pipelines (CI Gates), used at L2+ |
-| `.gitignore` | Git config | Ignore rules (if present) |
+| `.gitignore` | Git config | Ignore rules |
 
 ---
 

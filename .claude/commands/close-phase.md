@@ -1,13 +1,13 @@
 ---
-description: "Compress phase knowledge into a Migration Journal, auto-archive via openspec archive, update CLAUDE.md, and cleanup"
+description: "Compress phase knowledge into a Migration Journal, auto-archive via openspec archive, update .claude/CLAUDE.md, and cleanup"
 argument-hint: "[change-id]"
 ---
 
-# /close-phase: Start Phase 5 -- Archive the Change, Update CLAUDE.md, Compress Knowledge
+# /close-phase: Start Phase 5 -- Archive the Change, Update .claude/CLAUDE.md, Compress Knowledge
 
 ## Mission
 
-Finalize a completed change by distilling its phase knowledge into a Migration Journal, auto-archiving all artifacts via `openspec archive <change-id>` into `archive/<change-id>/`, updating CLAUDE.md's active changes registry, and cleaning up the working `specs/<change-id>/` directory. This command ensures that nothing is deleted -- knowledge is compressed and moved to the archive -- and that the project's CLAUDE.md always reflects the current state of active work.
+Finalize a completed change by distilling its phase knowledge into a Migration Journal, auto-archiving all artifacts via `openspec archive <change-id>` into `archive/<change-id>/`, updating `.claude/CLAUDE.md`'s active changes registry, and cleaning up the working `specs/<change-id>/` directory. This command ensures that nothing is deleted -- knowledge is compressed and moved to the archive -- and that the project's `.claude/CLAUDE.md` always reflects the current state of active work.
 
 ## Core Principle
 
@@ -119,7 +119,7 @@ Display the complete Migration Journal to the user. Prompt:
 
 Do not proceed until the user explicitly approves.
 
-### Step 4: Update CLAUDE.md
+### Step 4: Update .claude/CLAUDE.md
 
 1. Read the current `.claude/CLAUDE.md`.
 2. Remove `<change-id>` from the "Active Changes" section.
@@ -127,11 +127,11 @@ Do not proceed until the user explicitly approves.
    ```
    - <change-id>: <one-line summary> -- archived <date>
    ```
-4. If the Migration Journal contains architecture-level lessons learned that affect the project overview (e.g., "switch from X to Y"), update the relevant CLAUDE.md sections to reflect the new state.
-5. Commit the CLAUDE.md update:
+4. If the Migration Journal contains architecture-level lessons learned that affect the project overview (e.g., "switch from X to Y"), update the relevant `.claude/CLAUDE.md` sections to reflect the new state.
+5. Commit the `.claude/CLAUDE.md` update:
    ```
    git add .claude/CLAUDE.md
-   git commit -m "docs: update CLAUDE.md -- archive <change-id>"
+   git commit -m "docs: update .claude/CLAUDE.md -- archive <change-id>"
    ```
 
 ### Step 5: Run openspec archive
@@ -205,7 +205,7 @@ AICAM and similar bases use `.agents/` directory for archival and require manual
 - Uses **OpenSpec archive**: `openspec archive <change-id>` handles the full move automatically.
 - Archives to **`archive/<change-id>/`**, not `.agents/` or custom paths.
 - Produces a **Migration Journal** (compressed knowledge) rather than a raw changelog.
-- Updates **CLAUDE.md** as part of the archival process, keeping the AI context current.
+- Updates **`.claude/CLAUDE.md`** as part of the archival process, keeping the AI context current.
 - Enforces Phase 5 gates via `run_phase_gates 5` before completion.
 
 ## Hard Gate
@@ -213,7 +213,7 @@ AICAM and similar bases use `.agents/` directory for archival and require manual
 - All 4 Phase 5 gates (`run_phase_gates 5`) must PASS
 - `archive/<change-id>/MIGRATION.md` (Migration Journal) must exist
 - `archive/<change-id>/prd.md` and `archive/<change-id>/tasks.md` must exist
-- CLAUDE.md must be updated and committed
+- `.claude/CLAUDE.md` must be updated and committed
 - All working `specs/<change-id>/` artifacts must be cleaned up (not left as orphans)
 
 ## Output
@@ -227,7 +227,7 @@ archive/<change-id>/
 ### Migration Journal
 archive/<change-id>/MIGRATION.md
 
-### CLAUDE.md Update
+### .claude/CLAUDE.md Update
 Active Changes: <change-id> removed
 Completed Changes: <change-id> added
 

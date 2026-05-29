@@ -2,12 +2,18 @@
   "permissions": {
     "allow": [
       "Bash(git *)",
+      "Bash(mvn *)",
       "Bash(npm *)",
       "Bash(npx *)",
       "Bash(pytest *)",
       "Bash(python3 *)",
       "Bash(chmod *)",
       "Bash(mkdir *)",
+      "Bash(bash -n *)",
+      "Bash(find *)",
+      "Bash(grep *)",
+      "Bash(wc *)",
+      "Bash(cat *)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:figma.com)",
@@ -129,7 +135,7 @@
       "skills": ["finishing-a-development-branch", "release-builder", "openspec:archive"],
       "mcps": [],
       "hooks": ["pre-merge", "post-merge"],
-      "gates": ["all_gates_pass", "destructive_op", "archive"],
+      "gates": ["full_diagnostics", "destructive_op", "archive"],
       "entryCommand": "/close-phase"
     }
   }

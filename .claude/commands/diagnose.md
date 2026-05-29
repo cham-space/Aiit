@@ -15,7 +15,7 @@ Perform a non-destructive, read-only audit of every layer of the AI Development 
 
 ## Process
 
-### Check 1: CLAUDE.md Health
+### Check 1: .claude/CLAUDE.md Health
 
 Verify the AI instruction file is present, well-structured, and current:
 
@@ -25,7 +25,7 @@ Verify the AI instruction file is present, well-structured, and current:
 - Does the file modification date suggest it is reasonably current (not stale)?
 
 ```
-[PASS/FAIL/WARN] CLAUDE.md: <details>
+[PASS/FAIL/WARN] .claude/CLAUDE.md: <details>
 ```
 
 ### Check 2: Active Change Lifecycle Scan
@@ -184,7 +184,7 @@ Level: L<N>
 
 ## Detailed Results
 
-### 1. CLAUDE.md Health
+### 1. .claude/CLAUDE.md Health
 [PASS/FAIL/WARN] <details>
 
 ### 2. Active Change Lifecycle

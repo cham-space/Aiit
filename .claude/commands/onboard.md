@@ -1,5 +1,5 @@
 ---
-description: "Interactive progressive setup from zero to configured -- role-aware routing, openspec init, CLAUDE.md auto-generation"
+description: "Interactive progressive setup from zero to configured -- role-aware routing, openspec init, .claude/CLAUDE.md auto-generation"
 argument-hint: "[no arguments -- interactive flow]"
 ---
 
@@ -7,11 +7,11 @@ argument-hint: "[no arguments -- interactive flow]"
 
 ## Mission
 
-Guide a new user (or re-configure an existing user) through a progressive, role-aware, three-question onboarding flow that sets up the AI Development Base from scratch or reconfigures an existing project. This command runs `openspec init` to create the spec directory scaffold, deploys the `.claude/` configuration (settings, commands, skills), generates a custom CLAUDE.md tailored to the user's role and level, activates git hooks via `git config core.hooksPath .githooks`, and finishes with an automatic `/diagnose` validation run to confirm everything is healthy.
+Guide a new user (or re-configure an existing user) through a progressive, role-aware, three-question onboarding flow that sets up the AI Development Base from scratch or reconfigures an existing project. This command runs `openspec init` to create the spec directory scaffold, deploys the `.claude/` configuration (settings, commands, skills), generates a custom `.claude/CLAUDE.md` tailored to the user's role and level, activates git hooks via `git config core.hooksPath .githooks`, and finishes with an automatic `/diagnose` validation run to confirm everything is healthy.
 
 ## Core Principle
 
-**Progressive disclosure with role-aware routing.** Not every user needs every capability. The four-question flow (Language -> Role -> Project State -> Level) deterministically routes each user to the exact setup path they need -- no more and no less. All subsequent prompts, commands, and generated files adapt to the chosen language. CLAUDE.md is generated dynamically from the answers, not copied from a static template.
+**Progressive disclosure with role-aware routing.** Not every user needs every capability. The four-question flow (Language -> Role -> Project State -> Level) deterministically routes each user to the exact setup path they need -- no more and no less. All subsequent prompts, commands, and generated files adapt to the chosen language. `.claude/CLAUDE.md` is generated dynamically from the answers, guided by `.claude/templates/CLAUDE.md.template`.
 
 ## Process
 
@@ -26,7 +26,7 @@ Before any other questions, present Language Selection:
 
 Capture the answer as `$LANG`. Set all subsequent prompts to use `$LANG`.
 
-**Effect:** Every question from this point on is displayed in `$LANG`. Generated CLAUDE.md section headers, WORKFLOW.md references, command descriptions, and error messages all adapt to `$LANG`. The README.md and README.zh.md / README.en.md guide files already exist in both languages — reference the appropriate one based on `$LANG`.
+**Effect:** Every question from this point on is displayed in `$LANG`. Generated `.claude/CLAUDE.md` section headers, WORKFLOW.md references, command descriptions, and error messages all adapt to `$LANG`. The README.md and README.zh.md / README.en.md guide files already exist in both languages — reference the appropriate one based on `$LANG`.
 
 ### Step 1: Entry -- Identify Role
 
@@ -49,9 +49,9 @@ Present Question (in `$LANG`):
 > **EN:** What is the current state of this project?
 > **ZH:** 当前项目处于什么状态？
 >
-> 1. **Brand new project (全新项目)** — Empty directory or newly cloned. Need full initialization: `openspec init`, config deployment, CLAUDE.md generation.
+> 1. **Brand new project (全新项目)** — Empty directory or newly cloned. Need full initialization: `openspec init`, config deployment, `.claude/CLAUDE.md` generation.
 > 2. **Existing project without AI Dev Base (已有项目，未接入基座)** — Has code but no `.claude/`, `specs/`, or `.githooks/`. Need to retrofit the base structure.
-> 3. **Existing project with AI Dev Base (已有项目，已接入基座)** — Already has `.claude/`, `specs/`, `.githooks/`. Need to reconfigure role, level, or regenerate CLAUDE.md.
+> 3. **Existing project with AI Dev Base (已有项目，已接入基座)** — Already has `.claude/`, `specs/`, `.githooks/`. Need to reconfigure role, level, or regenerate `.claude/CLAUDE.md`.
 
 Capture the answer as `$PROJECT_STATE`.
 
@@ -164,12 +164,12 @@ Verify:
 
 Skip `openspec init` and hook deployment. Focus on:
 1. Updating `settings.json` with the new role and level
-2. Regenerating CLAUDE.md
+2. Regenerating `.claude/CLAUDE.md`
 3. Re-running Phase 0 gates to confirm everything is still healthy
 
-### Step 5: Generate CLAUDE.md
+### Step 5: Generate .claude/CLAUDE.md
 
-Based on `$LANG` + `$ROLE` + `$LEVEL`, generate `.claude/CLAUDE.md` dynamically. Do not copy a static template. The file must include:
+Read the generation rules from `.claude/templates/CLAUDE.md.template`, then based on `$LANG` + `$ROLE` + `$LEVEL`, generate `.claude/CLAUDE.md` dynamically. The file must include:
 
 ```markdown
 # Project: <project-name>
@@ -239,7 +239,7 @@ git commit -m "chore: onboarding -- role=<$ROLE>, level=<$LEVEL>"
 
 After setup is complete, automatically invoke `/diagnose` to produce a health report validating that:
 
-- CLAUDE.md is present and well-structured
+- `.claude/CLAUDE.md` is present and well-structured
 - All 3 required directories exist
 - Git hooks are active
 - Security tooling is available (or installation instructions are provided)
@@ -296,7 +296,7 @@ For anything larger, suggest /discover to the team.
 Before this command reports success:
 - `openspec init` MUST complete (for new projects)
 - `run_phase_gates 0` MUST return all PASS (Directory Structure + Hook Activation)
-- CLAUDE.md MUST be generated and committed
+- `.claude/CLAUDE.md` MUST be generated and committed
 - `/diagnose` MUST run and produce a pass/fail report (failures must include remediation steps)
 - Git hooks MUST be active (`git config core.hooksPath` = `.githooks`)
 
@@ -304,8 +304,9 @@ Before this command reports success:
 
 AICAM and similar bases copy a static CLAUDE.md template and require manual config file editing. THIS `/onboard`:
 
+- Reads generation rules from **`.claude/templates/CLAUDE.md.template`** (not auto-loaded by Claude Code)
 - Runs **`openspec init`** to create the spec directory scaffold (not a manual mkdir)
-- **Generates CLAUDE.md dynamically** from the user's role, level, and project state -- it is always customized
+- **Generates `.claude/CLAUDE.md` dynamically** from the user's role, level, and project state -- it is always customized
 - **Deploys `.claude/` config** as part of the flow, not as a separate pre-requisite
 - **Auto-runs `/diagnose`** as a post-setup validation step, surfacing issues immediately
 - Uses **3-question progressive routing** (Role -> State -> Level) rather than a flat config form
