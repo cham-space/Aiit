@@ -36,20 +36,20 @@ check_spec_drift() {
 
   echo "  [L2] Checking spec drift for change: $change_id"
 
-  if command -v openspec &>/dev/null; then
-    # Capture openspec diff output (optional tool; non-fatal if missing)
-    local diff_output
-    diff_output=$(openspec diff "$change_id" 2>&1) || true
+  if ! command -v openspec &>/dev/null; then
+    fail_msg "  SPEC DRIFT: openspec CLI not found — install with: npm install -g @fission-ai/openspec"
+    return 1
+  fi
 
-    if echo "$diff_output" | grep -qi "HIGH"; then
-      drift_level="HIGH"
-    elif echo "$diff_output" | grep -qi "MEDIUM"; then
-      drift_level="MEDIUM"
-    else
-      drift_level="ALIGNED"
-    fi
+  # Capture openspec diff output
+  local diff_output
+  diff_output=$(openspec diff "$change_id" 2>&1) || true
+
+  if echo "$diff_output" | grep -qi "HIGH"; then
+    drift_level="HIGH"
+  elif echo "$diff_output" | grep -qi "MEDIUM"; then
+    drift_level="MEDIUM"
   else
-    warn_msg "  openspec not found — spec drift check skipped. Install openspec to enable."
     drift_level="ALIGNED"
   fi
 

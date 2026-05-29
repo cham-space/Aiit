@@ -614,26 +614,100 @@ gate_archive() {
 #   run_phase_gates 0 "my-change-id"
 #   run_phase_gates 1 "my-change-id"
 # ====================================================================
+
+# --------------------------------------------------------------------
+# get_enable_level — reads enableLevel from .claude/settings.json
+# Falls back to AIIT_LEVEL env var, then defaults to "L2" if unset.
+# --------------------------------------------------------------------
+get_enable_level() {
+  if [[ -n "${AIIT_LEVEL:-}" ]]; then
+    echo "$AIIT_LEVEL"
+    return
+  fi
+  local settings=".claude/settings.json"
+  if [[ -f "$settings" ]] && command -v python3 &>/dev/null; then
+    python3 -c "
+import json, sys
+try:
+    s = json.load(open('$settings'))
+    print(s.get('enableLevel', 'L2'))
+except Exception:
+    print('L2')
+"
+  else
+    echo "L2"
+  fi
+}
+
+# --------------------------------------------------------------------
+# gate_is_enabled gate_name level
+# Returns 0 (enabled) or 1 (skip) based on settings.json gatesEnabled.
+# L0 skips all gates. L2/L3 with "all" pass all gates through.
+# --------------------------------------------------------------------
+gate_is_enabled() {
+  local gate_name="$1"
+  local level="$2"
+  local settings=".claude/settings.json"
+
+  if [[ "$level" == "L0" ]]; then
+    return 1
+  fi
+
+  if [[ ! -f "$settings" ]] || ! command -v python3 &>/dev/null; then
+    return 0
+  fi
+
+  python3 -c "
+import json, sys
+try:
+    s = json.load(open('$settings'))
+    enabled = s.get('levels', {}).get('$level', {}).get('gatesEnabled', ['all'])
+    if enabled == ['all'] or 'all' in enabled:
+        sys.exit(0)
+    sys.exit(0 if '$gate_name' in enabled else 1)
+except Exception:
+    sys.exit(0)
+"
+}
+
 run_phase_gates() {
   local phase="$1"
   local change_id="${2:-}"
+  local current_level
+  current_level="$(get_enable_level)"
 
   echo ""
   echo "=============================================="
-  echo "  Quality Gates — Phase ${phase}"
+  echo "  Quality Gates — Phase ${phase}  [Level: ${current_level}]"
   echo "=============================================="
   echo ""
+
+  if [[ "$current_level" == "L0" ]]; then
+    warn_msg "Level L0: all quality gates skipped (emergency/hotfix mode)"
+    echo ""
+    return 0
+  fi
 
   local gate_results=()
   local gate_names=()
   local failed_count=0
   local total_count=0
+  local skipped_count=0
   local exit_code=0
 
-  # Helper to run a gate and record result
+  # Helper to run a gate — skips if not enabled for current level
   run_gate() {
     local gate_func="$1"
     local gate_label="$2"
+    local gate_key="${gate_func#gate_}"  # strip "gate_" prefix for lookup
+
+    if ! gate_is_enabled "$gate_key" "$current_level"; then
+      echo -e "  ${YELLOW}[SKIP]${NC} ${gate_label} (not enabled at ${current_level})"
+      skipped_count=$((skipped_count + 1))
+      echo ""
+      return
+    fi
+
     gate_names+=("$gate_label")
     total_count=$((total_count + 1))
     if $gate_func "$change_id"; then
@@ -685,7 +759,7 @@ run_phase_gates() {
 
   # --- Print Summary -------------------------------------------------
   echo "=============================================="
-  echo "  Phase ${phase} Gate Summary"
+  echo "  Phase ${phase} Gate Summary  [Level: ${current_level}]"
   echo "=============================================="
   for i in "${!gate_names[@]}"; do
     if [[ "${gate_results[$i]}" == "PASS" ]]; then
@@ -695,8 +769,9 @@ run_phase_gates() {
     fi
   done
   echo "=============================================="
-  echo "  Passed: $((total_count - failed_count)) / ${total_count}"
-  echo "  Failed: ${failed_count} / ${total_count}"
+  echo "  Passed:  $((total_count - failed_count)) / ${total_count}"
+  echo "  Failed:  ${failed_count} / ${total_count}"
+  echo "  Skipped: ${skipped_count} (not enabled at ${current_level})"
   echo "=============================================="
   echo ""
 

@@ -96,11 +96,21 @@ For each missing required component, output the installation command in `$LANG`:
 - **EN:** "Missing: `<component>`. Install: `<command>`"
 - **ZH:** "缺失：`<component>`。安装方式：`<command>`"
 
-After displaying all missing items, ask:
-- **EN:** "Install missing components now, or proceed with limited functionality?"
-- **ZH:** "现在安装缺失组件，还是以受限功能继续？"
+After displaying all missing items, apply the following blocking rules based on component type:
 
-Do NOT block setup — let the user proceed with what's available. Missing MCPs mean those specific checks will gracefully skip during execution.
+**HARD BLOCK (must install before proceeding, no override):**
+- **OpenSpec CLI** is missing and level is L1+: Stop immediately. Output:
+  - EN: "❌ BLOCKED: OpenSpec CLI is required for L1+. Install it first: `npm install -g @fission-ai/openspec`. Re-run `/onboard` after installation."
+  - ZH: "❌ 已阻断：L1+ 必须安装 OpenSpec CLI。请先执行：`npm install -g @fission-ai/openspec`，安装后重新运行 `/onboard`。"
+  - Do NOT proceed. Do NOT deploy any config files. Exit the command.
+
+**SOFT WARN (optional, user may continue with degraded functionality):**
+- Missing MCPs (Serena, TypeScript LSP, Figma, Playwright): warn, offer install commands, allow user to continue.
+- Missing gitleaks / semgrep / oasdiff: warn, allow user to continue.
+
+After soft-warn items, ask:
+- **EN:** "Install optional components now, or continue with limited functionality?"
+- **ZH:** "现在安装可选组件，还是以受限功能继续？"
 
 #### Path: Project Init (PROJECT_STATE = "brand new" or "existing without base")
 
