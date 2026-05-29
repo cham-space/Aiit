@@ -3,7 +3,7 @@
 # AI Development Base — Quality Gates
 # .githooks/lib/gates.sh
 #
-# 18 quality gate functions that enforce development process
+# 17 quality gate functions that enforce development process
 # requirements across 6 phases (0—5).
 #
 # Each gate function returns 0 (pass) or 1 (fail).
@@ -17,6 +17,27 @@ set -euo pipefail
 
 GATES_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$GATES_LIB_DIR/utils.sh"
+
+# --------------------------------------------------------------------
+# resolve_spec_file change_id filename subdir
+# Tries multiple path layouts for spec files:
+#   specs/<subdir>/<change_id>.md  (flat layout, /discover default)
+#   specs/<change_id>/<filename>   (nested layout)
+# Prints the resolved path or empty string.
+# --------------------------------------------------------------------
+resolve_spec_file() {
+  local change_id="$1"
+  local filename="$2"
+  local subdir="${3:-}"
+  if [[ -z "$change_id" ]]; then
+    return
+  fi
+  if [[ -n "$subdir" && -f "specs/${subdir}/${change_id}.md" ]]; then
+    echo "specs/${subdir}/${change_id}.md"
+  elif [[ -f "specs/${change_id}/${filename}" ]]; then
+    echo "specs/${change_id}/${filename}"
+  fi
+}
 
 # ====================================================================
 # Gate 1: gate_directory_structure
@@ -111,9 +132,12 @@ gate_prd_completeness() {
 
   echo "  [GATE] PRD Completeness for change: $change_id"
 
-  local prd_file="specs/${change_id}/prd.md"
-  if [[ ! -f "$prd_file" ]]; then
-    fail_msg "  PRD COMPLETENESS: PRD file not found at $prd_file"
+  local prd_file
+  prd_file=$(resolve_spec_file "$change_id" "prd.md" "prd")
+  if [[ -z "$prd_file" ]]; then
+    fail_msg "  PRD COMPLETENESS: PRD file not found"
+    echo "    Looked in: specs/prd/${change_id}.md"
+    echo "    Looked in: specs/${change_id}/prd.md"
     return 1
   fi
 
@@ -170,9 +194,10 @@ gate_testability() {
 
   echo "  [GATE] Testability Check for change: $change_id"
 
-  local prd_file="specs/${change_id}/prd.md"
-  if [[ ! -f "$prd_file" ]]; then
-    fail_msg "  TESTABILITY: PRD file not found at $prd_file"
+  local prd_file
+  prd_file=$(resolve_spec_file "$change_id" "prd.md" "prd")
+  if [[ -z "$prd_file" ]]; then
+    fail_msg "  TESTABILITY: PRD file not found"
     return 1
   fi
 
@@ -182,12 +207,10 @@ gate_testability() {
   ac_section=$(awk '/Acceptance Criteria|Acceptance Criteria:/,/^#/{print}' "$prd_file" 2>/dev/null || true)
 
   if [[ -z "$ac_section" ]]; then
-    warn_msg "  TESTABILITY: No 'Acceptance Criteria' section found in PRD"
-    echo "    Acceptance criteria should contain quantifiable, measurable elements."
+    fail_msg "  TESTABILITY: No 'Acceptance Criteria' section found in PRD"
+    echo "    Add a '## Acceptance Criteria' section with quantifiable, measurable conditions."
     echo "    Examples: 'response time < 200ms', '95% accuracy', 'supports 1000 concurrent users'"
-    # Non-blocking warning; gate returns 0
-    pass_msg "  TESTABILITY: awareness notice — add quantifiable acceptance criteria"
-    return 0
+    return 1
   fi
 
   # Check for quantifiable elements: numbers, percentages, durations
@@ -215,77 +238,233 @@ gate_testability() {
 # Gate 5: gate_task_granularity
 # Phase: 2
 # Checks that tasks are broken down to an appropriate level of
-# granularity (estimated time < 4 hours per task).
-#
-# Currently a placeholder — returns pass with a note.
+# granularity and that the plan structure is sound.
 # ====================================================================
 gate_task_granularity() {
   local change_id="$1"
 
   echo "  [GATE] Task Granularity for change: $change_id"
 
-  local tasks_file="specs/${change_id}/tasks.md"
-  if [[ ! -f "$tasks_file" ]]; then
-    pass_msg "  TASK GRANULARITY: no tasks file found — nothing to check"
-    return 0
+  # 1. plan.md must exist
+  local plan_file
+  plan_file=$(resolve_spec_file "$change_id" "plan.md" "plan")
+  if [[ -z "$plan_file" ]]; then
+    fail_msg "  TASK GRANULARITY: plan file not found"
+    echo "    Looked in: specs/plan/${change_id}.md"
+    echo "    Looked in: specs/${change_id}/plan.md"
+    return 1
   fi
 
-  # Count the number of tasks as a rough measure
+  # 2. tasks.md must exist
+  local tasks_file
+  tasks_file=$(resolve_spec_file "$change_id" "tasks.md")
+  if [[ -z "$tasks_file" ]]; then
+    fail_msg "  TASK GRANULARITY: tasks file not found"
+    echo "    Looked in: specs/${change_id}/tasks.md"
+    return 1
+  fi
+
+  # 3. Count tasks
   local task_count
   task_count=$(grep -cE '^[-*] \[ \]|^[-*] \[X\]|^[-*] \[x\]' "$tasks_file" 2>/dev/null || echo "0")
 
   if [[ "$task_count" -eq 0 ]]; then
-    pass_msg "  TASK GRANULARITY: no checklist tasks found — nothing to check"
-    return 0
+    fail_msg "  TASK GRANULARITY: no checklist tasks found in tasks.md"
+    echo "    Tasks should use '- [ ]' checklist format."
+    return 1
   fi
 
   echo "    Found ${task_count} tasks in tasks.md"
-  echo "    Verify each task can be completed in < 4 hours."
 
-  pass_msg "  TASK GRANULARITY: placeholder — manual review recommended (${task_count} tasks)"
+  local warnings=0
+
+  # 4. Too few tasks
+  if [[ "$task_count" -lt 2 ]]; then
+    warn_msg "  TASK GRANULARITY: only ${task_count} task — PRD may not be sufficiently decomposed"
+    warnings=$((warnings + 1))
+  fi
+
+  # 5. Too many tasks
+  if [[ "$task_count" -gt 30 ]]; then
+    warn_msg "  TASK GRANULARITY: ${task_count} tasks — consider grouping related tasks"
+    warnings=$((warnings + 1))
+  fi
+
+  # 6. Check for dependency annotations
+  local dep_count
+  dep_count=$(grep -ciE 'depends on|blocked by|requires|after ' "$tasks_file" 2>/dev/null || echo "0")
+  if [[ "$dep_count" -eq 0 && "$task_count" -gt 1 ]]; then
+    warn_msg "  TASK GRANULARITY: no dependency annotations found between ${task_count} tasks"
+    warnings=$((warnings + 1))
+  fi
+
+  echo "    Dependencies annotated: ${dep_count}"
+
+  if [[ $warnings -gt 0 ]]; then
+    pass_msg "  TASK GRANULARITY: ${task_count} tasks, ${warnings} warning(s) — review recommended"
+  else
+    pass_msg "  TASK GRANULARITY: ${task_count} tasks with ${dep_count} dependency annotations"
+  fi
   return 0
 }
 
 # ====================================================================
 # Gate 6: gate_no_cyclic_deps
 # Phase: 2
-# Checks for cyclic dependencies between modules/components.
-#
-# Currently a placeholder — returns pass.
+# Checks for cyclic dependencies between tasks in the plan.
+# Detects self-references and bidirectional dependencies.
 # ====================================================================
 gate_no_cyclic_deps() {
   local change_id="$1"
 
   echo "  [GATE] Cyclic Dependency Check for change: $change_id"
 
-  # Placeholder — in a real implementation this would use a tool like
-  # dependency-cruiser, madge, or custom graph analysis.
-  echo "    Cyclic dependency detection is a placeholder."
-  echo "    Consider integrating: madge (JS), pydeps (Python), or go mod graph (Go)."
+  local tasks_file
+  tasks_file=$(resolve_spec_file "$change_id" "tasks.md")
+  if [[ -z "$tasks_file" ]]; then
+    pass_msg "  NO CYCLIC DEPS: no tasks file — nothing to check"
+    return 0
+  fi
 
-  pass_msg "  NO CYCLIC DEPS: placeholder — no automated check configured"
+  # Extract lines with dependency annotations
+  local deps
+  deps=$(grep -inE 'depends on|blocked by|requires' "$tasks_file" 2>/dev/null || true)
+
+  if [[ -z "$deps" ]]; then
+    pass_msg "  NO CYCLIC DEPS: no dependency annotations found — nothing to check"
+    return 0
+  fi
+
+  local dep_count
+  dep_count=$(echo "$deps" | wc -l | tr -d ' ')
+  echo "    Found ${dep_count} dependency annotation(s)"
+
+  # Detect self-references: same task ID appears as both subject and dependency
+  local self_ref=""
+  while IFS= read -r line; do
+    # Extract task identifiers (e.g., "T1", "Task 1", "Task A")
+    local ids
+    ids=$(echo "$line" | grep -oE '(T[0-9]+|Task[- ]?[A-Za-z0-9]+|Step[- ]?[A-Za-z0-9]+)' 2>/dev/null || true)
+    if [[ -n "$ids" ]]; then
+      local first last
+      first=$(echo "$ids" | head -1)
+      last=$(echo "$ids" | tail -1)
+      if [[ -n "$first" && -n "$last" && "$first" == "$last" ]]; then
+        self_ref="${self_ref}  Line: $(echo "$line" | head -c 80)\n"
+      fi
+    fi
+  done <<< "$deps"
+
+  if [[ -n "$self_ref" ]]; then
+    fail_msg "  NO CYCLIC DEPS: self-referencing dependency detected:"
+    echo -e "$self_ref"
+    return 1
+  fi
+
+  # Detect bidirectional dependencies: A depends on B AND B depends on A
+  local bidirectional=""
+  local checked=""
+  while IFS= read -r line; do
+    local ids
+    ids=$(echo "$line" | grep -oE '(T[0-9]+|Task[- ]?[A-Za-z0-9]+|Step[- ]?[A-Za-z0-9]+)' 2>/dev/null || true)
+    if [[ -n "$ids" ]]; then
+      local from to
+      from=$(echo "$ids" | head -1)
+      to=$(echo "$ids" | tail -1)
+      if [[ -n "$from" && -n "$to" && "$from" != "$to" ]]; then
+        local pair="${from}->${to}"
+        local reverse="${to}->${from}"
+        # Skip if already checked this pair
+        if echo "$checked" | grep -qF "$pair"; then
+          continue
+        fi
+        checked="${checked} ${pair}"
+        # Check if reverse dependency exists
+        if echo "$deps" | grep -q "$to" && echo "$deps" | grep -q "$from"; then
+          local has_reverse
+          has_reverse=$(echo "$deps" | grep "$to" | grep -c "$from" 2>/dev/null || echo "0")
+          if [[ "$has_reverse" -gt 0 ]]; then
+            bidirectional="${bidirectional}  ${from} <-> ${to}\n"
+          fi
+        fi
+      fi
+    fi
+  done <<< "$deps"
+
+  if [[ -n "$bidirectional" ]]; then
+    fail_msg "  NO CYCLIC DEPS: bidirectional dependency detected:"
+    echo -e "$bidirectional"
+    return 1
+  fi
+
+  pass_msg "  NO CYCLIC DEPS: no simple cycles detected (${dep_count} deps checked)"
   return 0
 }
 
 # ====================================================================
 # Gate 7: gate_spec_alignment
 # Phase: 2
-# Checks that the implementation plan aligns with the spec.
-#
-# Currently a placeholder — returns pass.
+# Checks that the implementation plan aligns with the PRD spec.
+# Verifies structural alignment: both files exist, key PRD concepts
+# appear in the plan.
 # ====================================================================
 gate_spec_alignment() {
   local change_id="$1"
 
   echo "  [GATE] Spec Alignment for change: $change_id"
 
-  echo "    Spec alignment verification is a placeholder."
-  echo "    In a full implementation, this would verify:"
-  echo "      - Plan covers all spec sections"
-  echo "      - No extra work outside spec scope"
-  echo "      - Assumptions are documented"
+  # 1. Both PRD and plan must exist
+  local prd_file plan_file
+  prd_file=$(resolve_spec_file "$change_id" "prd.md" "prd")
+  plan_file=$(resolve_spec_file "$change_id" "plan.md" "plan")
 
-  pass_msg "  SPEC ALIGNMENT: placeholder — manual review recommended"
+  if [[ -z "$prd_file" ]]; then
+    fail_msg "  SPEC ALIGNMENT: PRD not found"
+    return 1
+  fi
+  if [[ -z "$plan_file" ]]; then
+    fail_msg "  SPEC ALIGNMENT: plan not found"
+    return 1
+  fi
+
+  # 2. Extract User Story titles from PRD
+  local story_count
+  story_count=$(grep -ciE '^\s*[-*]\s*(As a |As an )' "$prd_file" 2>/dev/null || echo "0")
+  echo "    PRD User Stories: ${story_count}"
+
+  if [[ "$story_count" -eq 0 ]]; then
+    warn_msg "  SPEC ALIGNMENT: no User Stories found in PRD — cannot verify alignment"
+    pass_msg "  SPEC ALIGNMENT: skipped — no User Stories to cross-reference"
+    return 0
+  fi
+
+  # 3. Extract key concepts from PRD (capitalized multi-word phrases)
+  local prd_keywords
+  prd_keywords=$(grep -oE '\b[A-Z][a-z]+(\s+[A-Z][a-z]+)+\b' "$prd_file" 2>/dev/null | sort -u | head -20 || true)
+
+  local matched=0
+  local total=0
+  while IFS= read -r keyword; do
+    [[ -z "$keyword" ]] && continue
+    # Skip very short or generic terms
+    [[ ${#keyword} -lt 6 ]] && continue
+    total=$((total + 1))
+    if grep -qiF "$keyword" "$plan_file" 2>/dev/null; then
+      matched=$((matched + 1))
+    fi
+  done <<< "$prd_keywords"
+
+  if [[ $total -gt 0 ]]; then
+    local pct=$((matched * 100 / total))
+    echo "    PRD concept coverage in plan: ${pct}% (${matched}/${total} key terms)"
+    if [[ $pct -lt 30 ]]; then
+      warn_msg "  SPEC ALIGNMENT: low PRD concept coverage (${pct}%) — plan may not cover all requirements"
+    else
+      pass_msg "  SPEC ALIGNMENT: plan covers ${pct}% of PRD key concepts"
+    fi
+  else
+    pass_msg "  SPEC ALIGNMENT: no extractable key concepts — skipped"
+  fi
   return 0
 }
 
@@ -383,6 +562,18 @@ try:
     r=float(t.attrib.get('line-rate',0))*100
     print(str(int(round(r)))+'%')
 except: print('unknown')" 2>/dev/null || echo "unknown")
+  elif [[ -f "target/site/jacoco/jacoco.csv" ]]; then
+    current_coverage=$(python3 -c "
+import csv
+total_missed=0; total_covered=0
+with open('target/site/jacoco/jacoco.csv') as f:
+    reader=csv.DictReader(f)
+    for row in reader:
+        total_missed+=int(row['INSTRUCTION_MISSED'])
+        total_covered+=int(row['INSTRUCTION_COVERED'])
+total=total_missed+total_covered
+print(str(int(round(total_covered*100/total)))+'%') if total>0 else print('unknown')
+" 2>/dev/null || echo "unknown")
   fi
 
   if [[ "$current_coverage" != "." && "$current_coverage" != "unknown" ]]; then
@@ -461,69 +652,126 @@ gate_security() {
 # ====================================================================
 # Gate 14: gate_smoke_test
 # Phase: 4
-# Quick sanity check that the built artifact starts and responds.
-#
-# Currently a placeholder — returns pass.
+# Build smoke test — verifies the project compiles successfully
+# using the detected ecosystem (node/maven/python/go/rust).
 # ====================================================================
 gate_smoke_test() {
   local change_id="$1"
 
-  echo "  [GATE] Smoke Test"
+  echo "  [GATE] Smoke Test (Build Check)"
 
-  echo "    Smoke testing is a placeholder."
-  echo "    In a full implementation, this would:"
-  echo "      - Start the application in a test environment"
-  echo "      - Execute a minimal health-check request"
-  echo "      - Verify the response status is OK (200)"
-  echo "      - Shut down the test instance"
+  local ecosystem
+  ecosystem=$(detect_ecosystem 2>/dev/null || echo "unknown")
+  ecosystem="${ecosystem:-unknown}"
 
-  pass_msg "  SMOKE TEST: placeholder — manual verification recommended"
+  echo "    Detected ecosystem: ${ecosystem}"
+
+  local build_output=""
+  local build_exit=0
+
+  case "$ecosystem" in
+    node|npm)
+      if [[ -f "package.json" ]] && grep -q '"build"' package.json 2>/dev/null; then
+        echo "    Running: npm run build --silent"
+        build_output=$(npm run build --silent 2>&1) || build_exit=$?
+      elif [[ -f "package.json" ]] && grep -q '"tsc"\|"typecheck"\|"type-check"' package.json 2>/dev/null; then
+        echo "    Running: npx tsc --noEmit"
+        build_output=$(npx tsc --noEmit 2>&1) || build_exit=$?
+      else
+        echo "    No build script found in package.json"
+        pass_msg "  SMOKE TEST: no build script — skipped"
+        return 0
+      fi
+      ;;
+    maven)
+      if [[ -f "pom.xml" ]]; then
+        echo "    Running: mvn compile -q"
+        build_output=$(mvn compile -q 2>&1) || build_exit=$?
+      fi
+      ;;
+    python)
+      if [[ -f "pyproject.toml" ]] || [[ -f "setup.py" ]]; then
+        echo "    Running: python -m compileall -q src/"
+        if [[ -d "src" ]]; then
+          build_output=$(python3 -m compileall -q src/ 2>&1) || build_exit=$?
+        else
+          echo "    No src/ directory — skipping compile check"
+          pass_msg "  SMOKE TEST: no source directory — skipped"
+          return 0
+        fi
+      fi
+      ;;
+    go)
+      if [[ -f "go.mod" ]]; then
+        echo "    Running: go build ./..."
+        build_output=$(go build ./... 2>&1) || build_exit=$?
+      fi
+      ;;
+    rust)
+      if [[ -f "Cargo.toml" ]]; then
+        echo "    Running: cargo check 2>&1"
+        build_output=$(cargo check 2>&1) || build_exit=$?
+      fi
+      ;;
+    *)
+      echo "    No recognized build system — skipping build check"
+      pass_msg "  SMOKE TEST: no build system detected — skipped"
+      return 0
+      ;;
+  esac
+
+  if [[ $build_exit -ne 0 ]] || echo "$build_output" | grep -qiE 'error|ERROR|FAILED|fatal'; then
+    fail_msg "  SMOKE TEST: build failed (exit code: ${build_exit})"
+    echo "    Last 5 lines of build output:"
+    echo "$build_output" | tail -5 | sed 's/^/      /'
+    return 1
+  fi
+
+  pass_msg "  SMOKE TEST: build passed (${ecosystem})"
   return 0
 }
 
 # ====================================================================
 # Gate 15: gate_full_diagnostics
 # Phase: 5
-# Runs the full diagnostic suite (lint, type check, test, coverage,
-# security, contract) in one pass.
-#
-# Currently a placeholder — returns pass.
+# Re-runs Phase 0-4 gates and aggregates results.
+# Any phase with a failing gate blocks Phase 5 completion.
 # ====================================================================
 gate_full_diagnostics() {
   local change_id="$1"
 
-  echo "  [GATE] Full Diagnostics"
+  echo "  [GATE] Full Diagnostics (Phase 0-4 re-run)"
 
-  echo "    Full diagnostics is a placeholder."
-  echo "    In a full implementation, this aggregates results from:"
-  echo "      - pre-commit checks (format, lint, type, secrets, TDD)"
-  echo "      - pre-push checks (unit test, coverage, security, contract)"
-  echo "      - L2 safety checks (spec drift, file scope, destructive ops)"
-  echo "    Disable individual checks in .githooks/config."
+  local total_fail=0
+  local phase_results=""
 
-  pass_msg "  FULL DIAGNOSTICS: placeholder — run pre-commit and pre-push checks individually"
+  for phase in 0 1 2 3 4; do
+    local phase_exit=0
+    # Run phase gates silently, capture exit code
+    _run_phase_silent "$phase" "$change_id" || phase_exit=$?
+    if [[ $phase_exit -ne 0 ]]; then
+      total_fail=$((total_fail + 1))
+      phase_results="${phase_results}    Phase ${phase}: FAIL\n"
+    else
+      phase_results="${phase_results}    Phase ${phase}: PASS\n"
+    fi
+  done
+
+  echo -e "$phase_results"
+  echo "    Summary: $((5 - total_fail))/5 phases passed"
+
+  if [[ $total_fail -gt 0 ]]; then
+    fail_msg "  FULL DIAGNOSTICS: ${total_fail} phase(s) have failing gates"
+    return 1
+  fi
+
+  pass_msg "  FULL DIAGNOSTICS: all phases passed"
   return 0
 }
 
 # ====================================================================
-# Gate 16: gate_all_gates_pass
-# Phase: 5
-# Aggregation gate — verifies that all previous phase gates have
-# passed.  This is a meta-gate that provides summary information.
+# Gate 16: (removed — gate_all_gates_pass merged into gate_full_diagnostics)
 # ====================================================================
-gate_all_gates_pass() {
-  local change_id="$1"
-
-  echo "  [GATE] All Gates Pass Check"
-
-  echo "    This meta-gate verifies that all required gates for the"
-  echo "    current change have passed."
-  echo "    Phase 0-4 gates should all return pass before proceeding."
-  echo "    Re-run run_phase_gates for each phase to verify."
-
-  pass_msg "  ALL GATES PASS: meta-gate — verify all phase gates individually"
-  return 0
-}
 
 # ====================================================================
 # Gate 17: gate_destructive_op
@@ -608,7 +856,7 @@ gate_archive() {
 #   Phase 2 — Task Granularity, No Cyclic Deps, Spec Alignment
 #   Phase 3 — TDD, File Scope, Spec Drift
 #   Phase 4 — Coverage, Contract, Security, Smoke Test
-#   Phase 5 — Full Diagnostics, All Gates Pass, Destructive Op, Archive
+#   Phase 5 — Full Diagnostics, Destructive Op, Archive
 #
 # Usage:
 #   run_phase_gates 0 "my-change-id"
@@ -668,6 +916,66 @@ try:
 except Exception:
     sys.exit(0)
 "
+}
+
+# --------------------------------------------------------------------
+# _run_phase_silent phase change_id
+# Runs all gates for a phase without printing summary banners.
+# Returns 0 if all pass, 1 if any fail.
+# Used by gate_full_diagnostics to aggregate Phase 0-4 results.
+# --------------------------------------------------------------------
+_run_phase_silent() {
+  local phase="$1"
+  local change_id="${2:-}"
+  local current_level
+  current_level="$(get_enable_level)"
+
+  if [[ "$current_level" == "L0" ]]; then
+    return 0
+  fi
+
+  local exit_code=0
+
+  _run_gate_silent() {
+    local gate_func="$1"
+    local gate_key="${gate_func#gate_}"
+
+    if ! gate_is_enabled "$gate_key" "$current_level"; then
+      return 0
+    fi
+
+    # Suppress output, capture exit code
+    $gate_func "$change_id" &>/dev/null || exit_code=1
+  }
+
+  case "$phase" in
+    0)
+      _run_gate_silent gate_directory_structure
+      _run_gate_silent gate_hook_activation
+      ;;
+    1)
+      _run_gate_silent gate_prd_completeness
+      _run_gate_silent gate_testability
+      ;;
+    2)
+      _run_gate_silent gate_task_granularity
+      _run_gate_silent gate_no_cyclic_deps
+      _run_gate_silent gate_spec_alignment
+      ;;
+    3)
+      _run_gate_silent gate_tdd
+      _run_gate_silent gate_file_scope
+      _run_gate_silent gate_spec_drift
+      ;;
+    4)
+      _run_gate_silent gate_coverage
+      _run_gate_silent gate_contract
+      _run_gate_silent gate_security
+      _run_gate_silent gate_smoke_test
+      ;;
+  esac
+
+  return $exit_code
 }
 
 run_phase_gates() {
@@ -747,7 +1055,6 @@ run_phase_gates() {
       ;;
     5)
       run_gate gate_full_diagnostics    "Full Diagnostics"
-      run_gate gate_all_gates_pass      "All Gates Pass"
       run_gate gate_destructive_op      "Destructive Op"
       run_gate gate_archive             "Archive"
       ;;

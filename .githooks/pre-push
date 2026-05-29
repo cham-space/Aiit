@@ -175,12 +175,12 @@ print(int(round(total_covered*100/total))) if total>0 else None
   fi
 
   if [[ -n "$cov_pct" ]]; then
-    echo "  Detected coverage: ${cov_pct}%  (threshold: ${COVERAGE_THRESHOLD}%)"
-    if [[ "$cov_pct" -lt "$COVERAGE_THRESHOLD" ]]; then
-      fail_msg "COVERAGE (${cov_pct}%) is below threshold (${COVERAGE_THRESHOLD}%)"
+    echo "  Detected coverage: ${cov_pct}%  (threshold: ${HOOK_COVERAGE_THRESHOLD:-80}%)"
+    if [[ "$cov_pct" -lt "${HOOK_COVERAGE_THRESHOLD:-80}" ]]; then
+      fail_msg "COVERAGE (${cov_pct}%) is below threshold (${HOOK_COVERAGE_THRESHOLD:-80}%)"
       HAS_ERROR=1
     else
-      pass_msg "COVERAGE (${cov_pct}%) meets threshold (${COVERAGE_THRESHOLD}%)"
+      pass_msg "COVERAGE (${cov_pct}%) meets threshold (${HOOK_COVERAGE_THRESHOLD:-80}%)"
     fi
   else
     warn_msg "COVERAGE — no coverage report found.  Consider running tests with coverage before push."
