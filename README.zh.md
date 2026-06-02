@@ -165,6 +165,46 @@ L2+：就绪任务自动并行执行（独立 Agent + 独立 worktree）。
 
 ---
 
+## Skill 快捷指令参考
+
+除基座自带的 6 个斜杠命令外，还可通过以下快捷指令直接调用 Superpowers 和 OpenSpec 的 Skill。
+
+### Superpowers Skills
+
+来自 `superpowers` 插件，使用格式：`/superpowers:<skill名>`
+
+| 快捷指令 | 说明 | 对应阶段 |
+|---------|------|---------|
+| `/superpowers:brainstorming` | 结构化需求探索 — 创建功能/组件/行为修改前必用 | Phase 1 |
+| `/superpowers:writing-plans` | PRD → 可执行任务 DAG，多步骤实现前使用 | Phase 2 |
+| `/superpowers:executing-plans` | 在独立会话中按拓扑顺序执行实现计划 | Phase 3 |
+| `/superpowers:test-driven-development` | TDD 铁律 — 实现任何功能或修复 bug 前使用 | Phase 3 |
+| `/superpowers:subagent-driven-development` | 多 Agent 并行执行独立任务 | Phase 3 |
+| `/superpowers:dispatching-parallel-agents` | 2+ 独立任务的并行调度 | Phase 3 |
+| `/superpowers:using-git-worktrees` | 创建隔离的 Git Worktree 工作空间 | Phase 3 |
+| `/superpowers:systematic-debugging` | 系统化调试 — 遇到任何 bug 或测试失败时使用 | Phase 3-4 |
+| `/superpowers:verification-before-completion` | 证据优先 — 声称工作完成前必须验证 | Phase 4 |
+| `/superpowers:requesting-code-review` | 完成主要功能后，合并前发起代码审查 | Phase 4 |
+| `/superpowers:receiving-code-review` | 收到 Code Review 反馈后，严谨评估再实施 | Phase 4 |
+| `/superpowers:finishing-a-development-branch` | 合并策略决策（merge/squash/rebase）+ 集成 | Phase 5 |
+| `/superpowers:writing-skills` | 创建、编辑或验证自定义 Skill | Phase 0 |
+| `/superpowers:using-superpowers` | 会话启动引导 — 建立 Skill 发现与使用规则 | — |
+
+### OpenSpec Skills
+
+项目级 Skill，定义在 `.claude/skills/openspec.md`，使用格式：`/openspec:<操作>`
+
+| 快捷指令 | 说明 | 对应阶段 |
+|---------|------|---------|
+| `/openspec:init` | 初始化 `specs/` 目录结构与标准模板 | Phase 0 |
+| `/openspec:validate` | 验证 Spec 文件的格式完整性与 Schema 合规性 | Phase 1-4 |
+| `/openspec:diff` | 检测实现代码与 Spec 之间的偏离（LOW/MEDIUM/HIGH） | Phase 3 |
+| `/openspec:archive` | 归档已完成的变更到 `archive/<change-id>/` | Phase 5 |
+
+> **提示**：这些 Skill 也可由 Claude 在合适场景下自动激活，无需手动调用。手动调用适合需要强制执行特定流程时。
+
+---
+
 ## Hook 系统
 
 | 层 | 内容 | 工具 | 成熟度 |

@@ -169,6 +169,46 @@ Run `/close-phase`. Pre-conditions verified → Migration Journal extraction →
 
 ---
 
+## Skill Shortcut Reference
+
+Beyond the 6 base slash commands, you can directly invoke Superpowers and OpenSpec skills via these shortcuts.
+
+### Superpowers Skills
+
+From the `superpowers` plugin. Format: `/superpowers:<skill-name>`
+
+| Shortcut | Description | Phase |
+|----------|-------------|-------|
+| `/superpowers:brainstorming` | Structured requirement exploration — use before creating features, components, or modifying behavior | Phase 1 |
+| `/superpowers:writing-plans` | PRD → executable task DAG, use before multi-step implementation | Phase 2 |
+| `/superpowers:executing-plans` | Execute implementation plan in topological order in a separate session | Phase 3 |
+| `/superpowers:test-driven-development` | TDD iron rule — use before implementing any feature or bugfix | Phase 3 |
+| `/superpowers:subagent-driven-development` | Multi-agent parallel execution of independent tasks | Phase 3 |
+| `/superpowers:dispatching-parallel-agents` | Parallel dispatch for 2+ independent tasks | Phase 3 |
+| `/superpowers:using-git-worktrees` | Create isolated Git Worktree workspaces | Phase 3 |
+| `/superpowers:systematic-debugging` | Systematic debugging — use when encountering any bug or test failure | Phase 3-4 |
+| `/superpowers:verification-before-completion` | Evidence-first — verify before claiming work is complete | Phase 4 |
+| `/superpowers:requesting-code-review` | Request code review after completing major features, before merge | Phase 4 |
+| `/superpowers:receiving-code-review` | Rigorously evaluate code review feedback before implementing | Phase 4 |
+| `/superpowers:finishing-a-development-branch` | Merge strategy decision (merge/squash/rebase) + integration | Phase 5 |
+| `/superpowers:writing-skills` | Create, edit, or verify custom Skills | Phase 0 |
+| `/superpowers:using-superpowers` | Session startup — establishes skill discovery and usage rules | — |
+
+### OpenSpec Skills
+
+Project-level skill, defined in `.claude/skills/openspec.md`. Format: `/openspec:<operation>`
+
+| Shortcut | Description | Phase |
+|----------|-------------|-------|
+| `/openspec:init` | Initialize `specs/` directory structure with standard templates | Phase 0 |
+| `/openspec:validate` | Validate spec file format completeness and schema compliance | Phase 1-4 |
+| `/openspec:diff` | Detect drift between implementation code and spec (LOW/MEDIUM/HIGH) | Phase 3 |
+| `/openspec:archive` | Archive completed change to `archive/<change-id>/` | Phase 5 |
+
+> **Tip**: These skills can also be auto-activated by Claude when context matches. Manual invocation is useful when you want to force a specific workflow.
+
+---
+
 ## Hook System
 
 | Layer | Content | Tools | Maturity |
