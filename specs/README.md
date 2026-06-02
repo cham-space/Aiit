@@ -21,4 +21,4 @@
 
 ## 使用方式
 
-运行 `/discover "你的想法"` 创建新变更，详见 `.claude/WORKFLOW.md`。
+详见 `.claude/WORKFLOW.md` 了解完整的变更生命周期流程。

@@ -169,47 +169,106 @@ Skip `openspec init` and hook deployment. Focus on:
 
 ### Step 5: Generate .claude/CLAUDE.md
 
-Read the generation rules from `.claude/templates/CLAUDE.md.template`, then based on `$LANG` + `$ROLE` + `$LEVEL`, generate `.claude/CLAUDE.md` dynamically. The file must include:
+Read the generation rules from `.claude/templates/CLAUDE.md.template`, then based on `$LANG` + `$ROLE` + `$LEVEL`, generate `.claude/CLAUDE.md` dynamically.
+
+**Core principle**: `.claude/CLAUDE.md` is a **project knowledge file**. It tells Claude what this project IS — its tech stack, build commands, architecture, code patterns, and testing rules. Aiit toolchain metadata (commands, MCP servers, skills, gate constraints) MUST NOT appear — Claude already perceives these through system prompts and `settings.json`.
+
+The file MUST include these sections:
 
 ```markdown
-# Project: <project-name>
+# <project-name>
 
-## Language / 语言
-- <$LANG> (All interactions will use this language)
+## Project Overview
+<One paragraph describing the project — auto-detected from ecosystem files or user-supplied>
 
-## Overview / 概述
-<Auto-detected from package.json / pyproject.toml / go.mod, or user-supplied>
+## Tech Stack
+| Technology | Purpose |
+|------------|---------|
+| {framework} | {why it's used} |
+<!-- FRAMEWORKS only, not individual libraries -->
 
-## Role & Level / 角色与级别
-- Role: <$ROLE>
-- Level: <$LEVEL> (<level-name>)
-- Setup Date: <timestamp>
+## Build & Test Commands
+\`\`\`bash
+# Build
+{build-command}
+# Test
+{test-command}
+# Lint (if applicable)
+{lint-command}
+\`\`\`
 
-## Commands I Can Use / 可用命令
-<Available commands per level from settings.json>
+## Project Structure
+<!-- ≤15 lines tree format, key directories only -->
+\`\`\`
+{root}/
+├── {dir}/     # {description}
+└── {dir}/     # {description}
+\`\`\`
 
-## Build & Test / 构建与测试
-<Auto-detected or user-supplied: npm test, pytest, go test, etc.>
+## Architecture
+<!-- 1-2 paragraphs: architecture style + key data flow -->
 
-## Active Changes / 活跃变更
-<Scanned from specs/ -- list of change-id with status>
+## Code Patterns
+### Naming
+- {convention}
+### Error Handling
+- {approach summary}
+### Simplicity First
+- Write minimum code for current spec — no speculative features
+- No abstractions unless reused in ≥2 places
+### Surgical Changes
+- Touch only what the request requires — match existing style
+- Remove imports/variables made unused by YOUR changes only
 
-## Architecture / 架构
-<Auto-detected: language, framework, key directories>
+## Testing
+- **Unit tests**: `{unit-test-command}`
+- **Integration tests**: `{integration-test-command}`
+- **Single file**: `{targeted-test-command}`
 
-## Constraints / 约束
-- NEVER skip gates / 严禁跳过 Gate
-- TDD required: <yes/no per level>
-- Parallel agents: <yes/no per level>
-- File scope enforcement: <yes/no>
-- Spec drift detection: <yes/no>
+### Phase Testing Gates (MANDATORY)
+| Gate | Trigger | Requirement |
+|------|---------|-------------|
+| Unit Tests | New logic added | Min 1 test per non-trivial function |
+| Zero Regression | Always | Full test suite passes |
+<!-- Add project-specific gates as needed -->
 
-## MCP Servers Available / 可用 MCP
-<List from settings.json level config>
+## Key Files
+| File | Purpose |
+|------|---------|
+| `{path}` | {1-line description} |
+<!-- ≤10 entries, only files defining the project's shape -->
 
-## Skills Available / 可用 Skill
-<List from settings.json level config>
+## Active Changes
+<!-- Scanned from specs/prd/ — list change-id with status -->
+
+## On-Demand Context
+| Topic | File | When to Read |
+|-------|------|-------------|
+| Spec drift guide | .claude/reference/spec-drift-guide.md | openspec diff shows drift |
+| Test strategies | .claude/reference/test-strategies/ | Writing tests |
+<!-- Only include files that actually exist -->
+
+## Safety Rules
+### Secrets & Credentials
+- Never commit `.env*`, `*.key`, `*.pem`, credential files
+### Git Operations
+- Confirm before `git push`; avoid destructive commands
+### Data & Schema
+- Summarize migration impact before running; wait for confirmation
+### Dependencies
+- Explain reason + breaking-change risk before adding/upgrading
+
+## Known Issues & Deferred Risks
+| ID | Description | Source | Archive Ref | Status |
+|----|-------------|--------|-------------|--------|
 ```
+
+The file MUST NOT include:
+- Role & Level (stored in settings.json)
+- Available Commands (`/discover`, `/execute`, etc. — auto-discovered by Claude)
+- Constraints / Gate rules (enforced by settings.json + hooks)
+- Available MCP Servers (auto-discovered by Claude)
+- Available Skills (auto-discovered by Claude)
 
 ### Step 6: Update settings.json
 
