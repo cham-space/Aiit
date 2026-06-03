@@ -810,8 +810,7 @@ gate_archive() {
   if [[ ! -d "$archive_dir" ]]; then
     fail_msg "  ARCHIVE: archive directory not found at $archive_dir"
     echo "    After completing a change, archive artifacts with:"
-    echo "      mkdir -p archive/${change_id}"
-    echo "      cp -r specs/${change_id}/* archive/${change_id}/"
+    echo "      bash .claude/scripts/aiit-archive.sh ${change_id}"
     return 1
   fi
 
@@ -831,17 +830,47 @@ gate_archive() {
     warn_msg "  ARCHIVE: missing expected files in archive:"
     echo -e "$missing_files"
     echo "    Archive is partially complete — review and fill gaps."
-    pass_msg "  ARCHIVE: partial — some files missing but non-blocking"
-    return 0
   fi
 
-  # Check for other common artifacts
+  # Check .aiit.yaml archived state if available
+  local aiit_yaml=""
+  if [[ -f "${archive_dir}/.aiit.yaml" ]]; then
+    aiit_yaml="${archive_dir}/.aiit.yaml"
+  elif [[ -f "specs/${change_id}/.aiit.yaml" ]]; then
+    aiit_yaml="specs/${change_id}/.aiit.yaml"
+  fi
+
+  if [[ -n "$aiit_yaml" ]]; then
+    local archived_val
+    archived_val=$(python3 - "$aiit_yaml" <<'PYEOF' 2>/dev/null || echo ""
+import sys, re
+with open(sys.argv[1]) as f:
+    for line in f:
+        m = re.match(r'^archived:\s*(.*)$', line)
+        if m:
+            print(m.group(1).strip())
+            sys.exit(0)
+print("")
+PYEOF
+)
+    if [[ "$archived_val" == "true" ]]; then
+      pass_msg "  ARCHIVE: .aiit.yaml confirms archived=true"
+    else
+      warn_msg "  ARCHIVE: .aiit.yaml archived is not true (value: ${archived_val:-<empty>})"
+    fi
+  fi
+
   local artifact_count
   artifact_count=$(find "$archive_dir" -type f 2>/dev/null | wc -l | tr -d ' ')
   echo "    Archive contains ${artifact_count} file(s)."
 
-  pass_msg "  ARCHIVE: archive directory is complete"
-  return 0
+  if [[ -z "$missing_files" ]]; then
+    pass_msg "  ARCHIVE: archive directory is complete"
+    return 0
+  else
+    pass_msg "  ARCHIVE: partial — some files missing but non-blocking"
+    return 0
+  fi
 }
 
 # ====================================================================
