@@ -55,7 +55,26 @@ AI Development Base 是一套**面向产研团队的标准化 AI 开发基础设
 
 ### 接入步骤
 
-**方式一：全新项目**
+**方式一：CLI 安装（推荐）**
+
+```bash
+# 全局安装 CLI
+npm install -g @aiit/base
+
+# 在项目目录初始化
+cd your-project
+aiit init
+
+# 然后在 Claude Code 中输入 /onboard 完成配置
+```
+
+CLI 提供以下命令：
+- `aiit init` — 初始化基座到当前项目
+- `aiit status` — 查看活跃变更和当前阶段
+- `aiit doctor` — 诊断安装健康状态
+- `aiit update` — 更新到最新版本
+
+**方式二：手动复制**
 
 将此仓库克隆或复制到你的项目目录，然后在 Claude Code 中输入：
 
@@ -65,7 +84,7 @@ AI Development Base 是一套**面向产研团队的标准化 AI 开发基础设
 
 交互流程：选择语言 → 选择角色 → 确认项目状态 → 选择启用级别（L0-L3），基座自动完成配置。
 
-**方式二：已有项目接入**
+**方式三：已有项目接入**
 
 将以下目录复制到你的项目根目录：
 

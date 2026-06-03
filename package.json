@@ -1,0 +1,38 @@
+{
+  "name": "@aiit/base",
+  "version": "1.0.0",
+  "description": "AI Development Base — OpenSpec + Superpowers workflow orchestration",
+  "bin": {
+    "aiit": "./bin/aiit.js"
+  },
+  "scripts": {
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "keywords": [
+    "ai",
+    "development",
+    "workflow",
+    "openspec",
+    "superpowers",
+    "claude-code",
+    "tdd"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    ".claude/",
+    ".githooks/",
+    "specs/",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/aiit.git"
+  }
+}

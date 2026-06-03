@@ -57,7 +57,26 @@ The base depends on the following components. Some require prior installation:
 
 ### Getting Started
 
-**Option 1: New project**
+**Option 1: CLI install (recommended)**
+
+```bash
+# Install CLI globally
+npm install -g @aiit/base
+
+# Initialize in your project directory
+cd your-project
+aiit init
+
+# Then run /onboard in Claude Code to complete configuration
+```
+
+The CLI provides these commands:
+- `aiit init` — Initialize the base in current project
+- `aiit status` — View active changes and current phase
+- `aiit doctor` — Diagnose installation health
+- `aiit update` — Update to latest version
+
+**Option 2: Manual copy**
 
 Copy this repository into your project directory, then type in Claude Code:
 
@@ -67,7 +86,7 @@ Copy this repository into your project directory, then type in Claude Code:
 
 Interactive flow: choose language → role → project state → enablement level (L0-L3). The base auto-configures everything.
 
-**Option 2: Existing project**
+**Option 3: Existing project**
 
 Copy these directories into your project root:
 

@@ -235,6 +235,8 @@ if hook_enabled "TDD_GATE"; then
     | grep -v '^\.githooks/' \
     | grep -v '^\.github/' \
     | grep -v '^\.claude/' \
+    | grep -v '^bin/' \
+    | grep -v '^package\.json$' \
     || true)
 
   # Collect staged test files.

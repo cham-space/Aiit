@@ -9,8 +9,9 @@
 #   3. Update .aiit.yaml archived=true
 #
 # Usage:
-#   aiit-archive.sh <change_id>              # Archive
-#   aiit-archive.sh <change_id> --dry-run    # Preview only
+#   aiit-archive.sh <change_id>                      # Archive
+#   aiit-archive.sh <change_id> --dry-run            # Preview only
+#   aiit-archive.sh <change_id> --generate-journal   # Archive + generate Migration Journal
 # ============================================================
 set -euo pipefail
 
@@ -18,6 +19,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/aiit-env.sh"
 
 DRY_RUN=0
+GENERATE_JOURNAL=0
 
 # --- cmd_archive --------------------------------------------------------
 # Archive a completed change.
@@ -131,6 +133,11 @@ cmd_archive() {
   echo "  Updating .aiit.yaml: archived=true"
   "$AIIT_STATE" set archived true
 
+  # --- Generate Migration Journal ---
+  if [[ $GENERATE_JOURNAL -eq 1 ]]; then
+    generate_journal "$change_id" "$archive_dir"
+  fi
+
   # --- Cleanup source (optional) ---
   echo ""
   echo "  Archive complete: ${archive_dir}/"
@@ -151,6 +158,130 @@ cmd_archive() {
   echo ""
 }
 
+# --- generate_journal ---------------------------------------------------
+# Generate Migration Journal from plan tasks, git diff, and commits.
+# ------------------------------------------------------------------------
+generate_journal() {
+  local change_id="$1"
+  local archive_dir="$2"
+
+  echo ""
+  echo "  Generating Migration Journal..."
+
+  local journal_file="${archive_dir}/MIGRATION.md"
+
+  # --- Extract problem statement from PRD ---
+  local prd_file=""
+  if [[ -f "specs/prd/${change_id}.md" ]]; then
+    prd_file="specs/prd/${change_id}.md"
+  elif [[ -f "specs/${change_id}/prd.md" ]]; then
+    prd_file="specs/${change_id}/prd.md"
+  fi
+
+  local problem="Not documented"
+  if [[ -n "$prd_file" ]]; then
+    # Extract first paragraph after "## Overview" or "## Background"
+    problem=$(awk '/^## (Overview|Background|动机)/ {found=1; next} found && /^## / {exit} found && /^$/ {next} found {print; exit}' "$prd_file" 2>/dev/null || echo "Not documented")
+  fi
+
+  # --- Extract deliverables from plan tasks ---
+  local deliverables=""
+  local tasks_file=""
+  if [[ -f "specs/plan/${change_id}.md" ]]; then
+    tasks_file="specs/plan/${change_id}.md"
+  elif [[ -f "specs/${change_id}/plan.md" ]]; then
+    tasks_file="specs/${change_id}/plan.md"
+  fi
+
+  if [[ -n "$tasks_file" ]]; then
+    # Extract task titles (lines starting with ## Task or ### Task)
+    deliverables=$(grep -E '^#{2,3}\s+Task' "$tasks_file" 2>/dev/null | sed 's/^#* Task[[:space:]]*[0-9]*[:.]*[[:space:]]*//' | head -10 || echo "")
+  fi
+
+  # --- Count files changed and tests added from git log ---
+  local files_changed=0
+  local tests_added=0
+  local first_commit=""
+
+  # Find the first commit for this change (look for change_id in commit message)
+  first_commit=$(git log --all --grep="${change_id}" --format="%H" --reverse 2>/dev/null | head -1 || echo "")
+
+  if [[ -n "$first_commit" ]]; then
+    # Count files changed since first commit
+    files_changed=$(git diff --stat "${first_commit}^..HEAD" 2>/dev/null | tail -1 | grep -oE '[0-9]+ file' | grep -oE '[0-9]+' || echo "0")
+
+    # Count test files added
+    tests_added=$(git diff --name-only "${first_commit}^..HEAD" 2>/dev/null | grep -E '(test|spec)' | wc -l | tr -d ' ' || echo "0")
+  fi
+
+  # --- Extract key decisions from commit messages ---
+  local decisions=""
+  if [[ -n "$first_commit" ]]; then
+    decisions=$(git log --format="%s" "${first_commit}^..HEAD" 2>/dev/null | grep -vE '^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)\(' | head -5 || echo "")
+  fi
+
+  # --- Generate journal markdown ---
+  cat > "$journal_file" <<JOURNAL
+# Migration Journal: ${change_id}
+
+**Archived:** $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+**Status:** archived
+
+---
+
+## Problem Solved
+
+${problem}
+
+## What Was Built
+
+$(if [[ -n "$deliverables" ]]; then
+    echo "$deliverables" | while read -r line; do
+      [[ -n "$line" ]] && echo "- ${line}"
+    done
+  else
+    echo "- Not documented"
+  fi)
+
+## Key Decisions
+
+$(if [[ -n "$decisions" ]]; then
+    echo "$decisions" | while read -r line; do
+      [[ -n "$line" ]] && echo "- ${line}"
+    done
+  else
+    echo "- No explicit decisions documented"
+  fi)
+
+## Metrics
+
+- **Files changed:** ${files_changed}
+- **Tests added:** ${tests_added}
+
+## Lessons Learned
+
+_(To be filled by the team during archive review)_
+
+---
+
+## Artifact Manifest
+
+| File | Phase | Description |
+|------|-------|-------------|
+| prd.md | 1 | Original PRD spec |
+| plan.md | 2 | Task plan + DAG |
+| .aiit.yaml | all | Workflow state tracking |
+JOURNAL
+
+  echo "  [OK] Journal generated: ${journal_file}"
+  echo ""
+  echo "  Please review and complete:"
+  echo "    - Verify 'Problem Solved' is accurate"
+  echo "    - Review 'What Was Built' deliverables"
+  echo "    - Add 'Lessons Learned' from the team"
+  echo ""
+}
+
 # --- Main ---------------------------------------------------------------
 main() {
   local change_id=""
@@ -158,6 +289,7 @@ main() {
   for arg in "$@"; do
     case "$arg" in
       --dry-run) DRY_RUN=1 ;;
+      --generate-journal) GENERATE_JOURNAL=1 ;;
       *) change_id="$arg" ;;
     esac
   done

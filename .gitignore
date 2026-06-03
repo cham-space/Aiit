@@ -9,6 +9,10 @@
 *.swo
 *~
 
+# Node.js
+node_modules/
+npm-debug.log*
+
 # Claude Code local
 .claude/settings.local.json
 

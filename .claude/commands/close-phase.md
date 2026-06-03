@@ -64,69 +64,43 @@ specs/release/<change-id>.md         (if exists)
 
 Build a manifest of every file. This manifest will be included in the Migration Journal.
 
-### Step 2: Extract and Compress Knowledge
+### Step 2: Generate Migration Journal Draft
 
-For each phase artifact, extract the essential knowledge and compress it into a Migration Journal:
+Run the archive script with `--generate-journal` to auto-generate a Migration Journal draft:
 
-#### Migration Journal Template
+```bash
+# First, preview what will be archived
+bash .claude/scripts/aiit-archive.sh <change-id> --dry-run
 
-```
-# Migration Journal: <change-id>
-Archived: <timestamp>
-Status: archived
-
-## Problem Solved
-<1 paragraph distilled from PRD Overview & Background>
-
-## What Was Built
-<Bulleted list of deliverables from the plan>
-
-## Key Decisions
-<Table of decisions made during execution with rationale>
-| Decision | Rationale | Phase |
-|----------|-----------|-------|
-| <what>   | <why>    | <N>   |
-
-## Lessons Learned
-<What went well, what was painful, what would we do differently next time>
-
-## Artifact Manifest
-<Full list of all files in the archive with descriptions>
-| File | Phase | Description |
-|------|-------|-------------|
-| prd.md | 1 | Original PRD spec |
-| plan.md | 2 | Task plan + DAG |
-| ... | ... | ... |
-
-## TDD Summary
-<Aggregated from per-task TDD Logs>
-| Task | RED | GREEN | Refactor | Spec Drift |
-|------|-----|-------|----------|------------|
-| T1   | YES | YES   | YES      | ALIGNED    |
-| ...  | ... | ...   | ...      | ...        |
-
-## Verification Summary
-<Aggregated Phase 4 results>
-| Check | Result | Evidence |
-|-------|--------|----------|
-| Contract | PASS | <link> |
-| Security | PASS | <link> |
-| Smoke Test | PASS | <link> |
-| ... | ... | ... |
+# Generate the Migration Journal draft
+bash .claude/scripts/aiit-archive.sh <change-id> --generate-journal
 ```
 
-### Step 3: Present Migration Journal for Review
+This automatically extracts:
+- **Problem Solved** — from PRD Overview/Background section
+- **What Was Built** — from plan task titles
+- **Key Decisions** — from commit messages
+- **Metrics** — files changed and tests added from git diff
 
-Display the complete Migration Journal to the user. Prompt:
+The draft is written to `archive/<change-id>/MIGRATION.md`.
 
-> "This Migration Journal captures everything we learned during this change. Please review:
-> - Are the Key Decisions accurate?
-> - Are the Lessons Learned complete?
-> - Is there anything we should add before archiving?
-> 
-> Reply 'approve' to proceed with archiving, or give me corrections."
+### Step 3: Review and Complete Migration Journal
 
-Do not proceed until the user explicitly approves.
+Display the generated Migration Journal to the user. Prompt:
+
+> "The Migration Journal draft has been generated. Please review:
+> - Is 'Problem Solved' accurate?
+> - Are the deliverables complete?
+> - Add 'Lessons Learned' from the team
+>
+> Reply 'approve' to finalize archiving, or provide corrections."
+
+If the user provides corrections, update the journal file. Do not proceed until the user explicitly approves.
+
+**Manual completion required:**
+- `Lessons Learned` — team must add insights
+- `Key Decisions` — verify and add rationale if missing
+- Any additional context the team wants preserved
 
 ### Step 4: Update .claude/CLAUDE.md
 
@@ -143,15 +117,12 @@ Do not proceed until the user explicitly approves.
    git commit -m "docs: update .claude/CLAUDE.md -- archive <change-id>"
    ```
 
-### Step 5: Archive via Script
+### Step 5: Finalize Archive
 
-Execute the automated archival using the aiit-archive.sh script:
+Execute the final archival (journal was already generated in Step 2):
 
 ```bash
-# First, preview what will be archived
-bash .claude/scripts/aiit-archive.sh <change-id> --dry-run
-
-# If the preview looks correct, run the actual archive
+# Run the archive (journal already generated, this sets archived=true)
 bash .claude/scripts/aiit-archive.sh <change-id>
 ```
 
