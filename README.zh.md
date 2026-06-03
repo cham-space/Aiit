@@ -145,7 +145,7 @@ Phase 0 ──▶ Phase 1 ──▶ Phase 2 ──▶ Phase 3 ──▶ Phase 4 
 
 ### Phase 2：Plan
 
-自动或手动进入。`writing-plans` 读取 PRD spec，拆解为任务 DAG，并行产出 API 契约、设计 spec、测试策略。
+输入 `/plan`。`writing-plans` 读取 PRD spec，拆解为任务 DAG，并行产出 API 契约、设计 spec、测试策略。
 
 **Gate：** 任务粒度 + 依赖无循环 + Spec 对齐。
 
@@ -159,7 +159,7 @@ L2+：就绪任务自动并行执行（独立 Agent + 独立 worktree）。
 
 ### Phase 4：Verify
 
-自动进入。七步验证：Contract → Security → Smoke Test → Visual Regression → 全量诊断 → Code Review → `openspec validate`。
+输入 `/verify`。七步验证：Contract → Security → Smoke Test → Visual Regression → 全量诊断 → Code Review → `openspec validate`。产出验证报告。
 
 **Gate：** 5 个 Gate 全部通过。
 
@@ -176,7 +176,9 @@ L2+：就绪任务自动并行执行（独立 Agent + 独立 worktree）。
 | 命令 | 说明 | 适用级别 |
 |------|------|---------|
 | `/discover [想法]` | Phase 1 入口，产出 PRD spec | L2+ |
+| `/plan` | Phase 2 入口，PRD → 任务 DAG + 并行 spec | L2+ |
 | `/execute` | Phase 3 入口，TDD 实现循环 | L1+ |
+| `/verify` | Phase 4 入口，七步验证 + 验证报告 | L1+ |
 | `/hotfix [问题]` | 紧急修复（≤3 文件、无新 API/DB 变更） | L0+ |
 | `/tweak [描述]` | 小改动快捷路径（≤5 文件、跳过 brainstorming、轻量 plan） | L0+ |
 | `/diagnose` | 只读健康审计（10 类检查） | L0+ |
@@ -187,7 +189,7 @@ L2+：就绪任务自动并行执行（独立 Agent + 独立 worktree）。
 
 ## Skill 快捷指令参考
 
-除基座自带的 7 个斜杠命令外，还可通过以下快捷指令直接调用 Superpowers 和 OpenSpec 的 Skill。
+除基座自带的 9 个斜杠命令外，还可通过以下快捷指令直接调用 Superpowers 和 OpenSpec 的 Skill。
 
 ### Superpowers Skills
 

@@ -133,7 +133,7 @@ This creates:
 
 If the `.claude/` directory does not exist or is incomplete:
 
-1. Ensure `.claude/commands/` contains all 7 command files: `discover.md`, `execute.md`, `hotfix.md`, `tweak.md`, `diagnose.md`, `close-phase.md`, `onboard.md`
+1. Ensure `.claude/commands/` contains all 9 command files: `discover.md`, `plan.md`, `execute.md`, `verify.md`, `hotfix.md`, `tweak.md`, `diagnose.md`, `close-phase.md`, `onboard.md`
 2. Ensure `.claude/settings.json` exists with the standard permission baseline and hook configuration
 3. Ensure `.claude/WORKFLOW.md` is present as the project handbook reference
 4. Ensure `.claude/skills/` directory exists (custom skills, if any)

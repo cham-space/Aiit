@@ -7,13 +7,14 @@
 # All state operations go through this script.
 #
 # Usage:
-#   aiit-state.sh init <change_id>              # Create .aiit.yaml
-#   aiit-state.sh set <key> <value>              # Set a field
-#   aiit-state.sh get <key>                      # Read a field
-#   aiit-state.sh check <condition>              # Check condition
-#   aiit-state.sh list                           # List all active changes
+#   aiit-state.sh init <change_id> [workflow] [initial_phase]  # Create .aiit.yaml
+#   aiit-state.sh set [change_id] <key> <value>                # Set a field
+#   aiit-state.sh get [change_id] <key>                        # Read a field
+#   aiit-state.sh check [change_id] <condition>                # Check condition
+#   aiit-state.sh list                                         # List all active changes
 #
 # Keys support dot notation: execute.tasks_total
+# When change_id is omitted for set/get/check, auto-detects the active change.
 # ============================================================
 set -euo pipefail
 
@@ -169,10 +170,12 @@ PYEOF
 
 # --- cmd_init -----------------------------------------------------------
 # Create a new .aiit.yaml for a change_id.
+# Usage: cmd_init <change_id> [workflow] [initial_phase]
 # ------------------------------------------------------------------------
 cmd_init() {
   local change_id="$1"
   local workflow="${2:-full}"
+  local initial_phase="${3:-discover}"
   local yaml_dir="specs/${change_id}"
 
   # Create directory if needed
@@ -185,7 +188,7 @@ cmd_init() {
   cat > "$yaml_file" <<EOF
 change_id: "${change_id}"
 workflow: ${workflow}
-phase: discover
+phase: ${initial_phase}
 phase_started_at: "${now}"
 
 execute:
@@ -213,18 +216,56 @@ EOF
   echo "[OK] Initialized state: $yaml_file"
 }
 
+# --- resolve_yaml -------------------------------------------------------
+# Resolve .aiit.yaml path. If first arg looks like a change_id (doesn't
+# match a known field name), use it; otherwise auto-detect.
+# Usage: resolve_yaml [change_id]
+# Prints the yaml path or exits with error.
+# ------------------------------------------------------------------------
+resolve_yaml() {
+  local arg="${1:-}"
+  local yaml_file=""
+
+  # Known field names (top-level and nested parents)
+  local field_names="phase phase_started_at workflow archived pause_point execute verify migration"
+
+  if [[ -n "$arg" ]] && ! echo "$field_names" | grep -qw "$arg"; then
+    # arg is a change_id
+    yaml_file=$(find_yaml "$arg")
+    if [[ -z "$yaml_file" ]]; then
+      echo "[ERROR] No .aiit.yaml found for change_id: $arg"
+      exit 1
+    fi
+  else
+    yaml_file=$(find_yaml_active)
+    if [[ -z "$yaml_file" ]]; then
+      echo "[ERROR] No active .aiit.yaml found. Run 'init' first."
+      exit 1
+    fi
+  fi
+
+  echo "$yaml_file"
+}
+
 # --- cmd_set ------------------------------------------------------------
 # Set a field value.
+# Usage: cmd_set [change_id] <key> <value>
 # ------------------------------------------------------------------------
 cmd_set() {
-  local key="$1"
-  local value="$2"
+  local yaml_file key value
 
-  # Find the yaml file - need to determine which change
-  local yaml_file
-  yaml_file=$(find_yaml_active)
-  if [[ -z "$yaml_file" ]]; then
-    echo "[ERROR] No active .aiit.yaml found. Run 'init' first."
+  if [[ $# -eq 3 ]]; then
+    # change_id provided: set <change_id> <key> <value>
+    yaml_file=$(resolve_yaml "$1")
+    key="$2"
+    value="$3"
+  elif [[ $# -eq 2 ]]; then
+    # no change_id: set <key> <value>
+    yaml_file=$(resolve_yaml "")
+    key="$1"
+    value="$2"
+  else
+    echo "Usage: aiit-state.sh set [change_id] <key> <value>"
     exit 1
   fi
 
@@ -242,14 +283,19 @@ cmd_set() {
 
 # --- cmd_get ------------------------------------------------------------
 # Read a field value.
+# Usage: cmd_get [change_id] <key>
 # ------------------------------------------------------------------------
 cmd_get() {
-  local key="$1"
+  local yaml_file key
 
-  local yaml_file
-  yaml_file=$(find_yaml_active)
-  if [[ -z "$yaml_file" ]]; then
-    echo "[ERROR] No active .aiit.yaml found."
+  if [[ $# -eq 2 ]]; then
+    yaml_file=$(resolve_yaml "$1")
+    key="$2"
+  elif [[ $# -eq 1 ]]; then
+    yaml_file=$(resolve_yaml "")
+    key="$1"
+  else
+    echo "Usage: aiit-state.sh get [change_id] <key>"
     exit 1
   fi
 
@@ -258,19 +304,25 @@ cmd_get() {
 
 # --- cmd_check ----------------------------------------------------------
 # Check a condition. Returns 0 if true, 1 if false.
+# Usage: cmd_check [change_id] <condition> <expected>
 # Conditions:
 #   phase_is <phase>
 #   workflow_is <workflow>
 #   archived_is <true|false>
 # ------------------------------------------------------------------------
 cmd_check() {
-  local condition="$1"
-  local expected="$2"
+  local yaml_file condition expected
 
-  local yaml_file
-  yaml_file=$(find_yaml_active)
-  if [[ -z "$yaml_file" ]]; then
-    echo "[ERROR] No active .aiit.yaml found."
+  if [[ $# -eq 3 ]]; then
+    yaml_file=$(resolve_yaml "$1")
+    condition="$2"
+    expected="$3"
+  elif [[ $# -eq 2 ]]; then
+    yaml_file=$(resolve_yaml "")
+    condition="$1"
+    expected="$2"
+  else
+    echo "Usage: aiit-state.sh check [change_id] <condition> <expected>"
     exit 1
   fi
 
@@ -391,11 +443,13 @@ main() {
       echo "Usage: aiit-state.sh <command> [args]"
       echo ""
       echo "Commands:"
-      echo "  init <change_id> [workflow]   Create .aiit.yaml (workflow: full|hotfix|tweak)"
-      echo "  set <key> <value>             Set a field (supports dot notation)"
-      echo "  get <key>                     Read a field"
-      echo "  check <condition> <expected>  Check condition (phase_is, workflow_is, archived_is)"
-      echo "  list                          List all active changes"
+      echo "  init <change_id> [workflow] [phase]  Create .aiit.yaml (phase defaults to discover)"
+      echo "  set [change_id] <key> <value>        Set a field (supports dot notation)"
+      echo "  get [change_id] <key>                Read a field"
+      echo "  check [change_id] <condition> <val>  Check condition (phase_is, workflow_is, archived_is)"
+      echo "  list                                 List all active changes"
+      echo ""
+      echo "When change_id is omitted, auto-detects the active (non-archived) change."
       ;;
   esac
 }

@@ -12,6 +12,7 @@
 #   aiit-archive.sh <change_id>                      # Archive
 #   aiit-archive.sh <change_id> --dry-run            # Preview only
 #   aiit-archive.sh <change_id> --generate-journal   # Archive + generate Migration Journal
+#   aiit-archive.sh <change_id> --journal-only       # Generate journal only (no archive)
 # ============================================================
 set -euo pipefail
 
@@ -20,6 +21,7 @@ source "$SCRIPT_DIR/aiit-env.sh"
 
 DRY_RUN=0
 GENERATE_JOURNAL=0
+JOURNAL_ONLY=0
 
 # --- cmd_archive --------------------------------------------------------
 # Archive a completed change.
@@ -35,8 +37,8 @@ cmd_archive() {
 
   # --- Validate entry state ---
   local phase archived
-  phase=$("$AIIT_STATE" get phase 2>/dev/null || echo "")
-  archived=$("$AIIT_STATE" get archived 2>/dev/null || echo "false")
+  phase=$("$AIIT_STATE" get "$change_id" phase 2>/dev/null || echo "")
+  archived=$("$AIIT_STATE" get "$change_id" archived 2>/dev/null || echo "false")
 
   if [[ -z "$phase" ]]; then
     echo "  [FAIL] No .aiit.yaml found for ${change_id}"
@@ -97,6 +99,19 @@ cmd_archive() {
     exit 0
   fi
 
+  # --- Create archive directory ---
+  if [[ ! -d "$archive_dir" ]]; then
+    echo "  Creating: ${archive_dir}/"
+    mkdir -p "$archive_dir"
+  fi
+
+  # --- Journal only mode: generate journal and exit ---
+  if [[ $JOURNAL_ONLY -eq 1 ]]; then
+    generate_journal "$change_id" "$archive_dir"
+    echo "  [OK] Journal generated. Review it before running final archive."
+    exit 0
+  fi
+
   # --- Try openspec archive first ---
   if command -v openspec &>/dev/null; then
     echo "  Running: openspec archive ${change_id}"
@@ -108,10 +123,6 @@ cmd_archive() {
   fi
 
   # --- Manual copy fallback ---
-  if [[ ! -d "$archive_dir" ]]; then
-    echo "  Creating: ${archive_dir}/"
-    mkdir -p "$archive_dir"
-  fi
 
   # Copy nested layout
   for d in "${src_dirs[@]:-}"; do
@@ -131,7 +142,7 @@ cmd_archive() {
 
   # --- Update .aiit.yaml ---
   echo "  Updating .aiit.yaml: archived=true"
-  "$AIIT_STATE" set archived true
+  "$AIIT_STATE" set "$change_id" archived true
 
   # --- Generate Migration Journal ---
   if [[ $GENERATE_JOURNAL -eq 1 ]]; then
@@ -290,6 +301,7 @@ main() {
     case "$arg" in
       --dry-run) DRY_RUN=1 ;;
       --generate-journal) GENERATE_JOURNAL=1 ;;
+      --journal-only) JOURNAL_ONLY=1 ;;
       *) change_id="$arg" ;;
     esac
   done

@@ -60,7 +60,7 @@ Create the change tracking state:
 
 ```bash
 # Generate change-id: YYYYMMDD-<kebab-case-slug>
-bash .claude/scripts/aiit-state.sh init "<change-id>" "tweak"
+bash .claude/scripts/aiit-state.sh init "<change-id>" "tweak" "execute"
 ```
 
 This creates `specs/<change-id>/.aiit.yaml` with:
@@ -145,15 +145,17 @@ No need for:
 
 ### Step 5: Archive
 
-Once all tasks are complete, archive the change:
+Once all tasks are complete, archive the change directly. Since /tweak skips the full verification phase, archive without requiring a verification report:
 
 ```bash
-# Transition to release phase
-bash .claude/scripts/aiit-guard.sh check execute release "<change-id>" --apply
-
-# Archive
-bash .claude/scripts/aiit-archive.sh "<change-id>"
+# Archive directly (skips verify.report requirement)
+bash .claude/scripts/aiit-archive.sh "<change-id>" --generate-journal
 ```
+
+This script:
+- Copies all spec files to `archive/<change-id>/`
+- Generates a Migration Journal draft
+- Updates `.aiit.yaml` to set `archived: true`
 
 Commit the archive:
 ```bash

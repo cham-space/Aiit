@@ -66,29 +66,28 @@ Build a manifest of every file. This manifest will be included in the Migration 
 
 ### Step 2: Generate Migration Journal Draft
 
-Run the archive script with `--generate-journal` to auto-generate a Migration Journal draft:
+Run the archive script with `--journal-only` to auto-generate a Migration Journal draft without performing the actual archive:
 
 ```bash
-# First, preview what will be archived
+# Preview what will be archived
 bash .claude/scripts/aiit-archive.sh <change-id> --dry-run
 
-# Generate the Migration Journal draft
-bash .claude/scripts/aiit-archive.sh <change-id> --generate-journal
+# Generate the Migration Journal draft (does NOT archive yet)
+bash .claude/scripts/aiit-archive.sh <change-id> --journal-only
 ```
 
-This automatically extracts:
+This creates `archive/<change-id>/MIGRATION.md` with auto-extracted content:
 - **Problem Solved** — from PRD Overview/Background section
 - **What Was Built** — from plan task titles
 - **Key Decisions** — from commit messages
 - **Metrics** — files changed and tests added from git diff
 
-The draft is written to `archive/<change-id>/MIGRATION.md`.
-
 ### Step 3: Review and Complete Migration Journal
 
 Display the generated Migration Journal to the user. Prompt:
 
-> "The Migration Journal draft has been generated. Please review:
+> "The Migration Journal draft has been generated at archive/<change-id>/MIGRATION.md.
+> Please review:
 > - Is 'Problem Solved' accurate?
 > - Are the deliverables complete?
 > - Add 'Lessons Learned' from the team
@@ -117,18 +116,20 @@ If the user provides corrections, update the journal file. Do not proceed until 
    git commit -m "docs: update .claude/CLAUDE.md -- archive <change-id>"
    ```
 
-### Step 5: Finalize Archive
+### Step 5: Execute Archive
 
-Execute the final archival (journal was already generated in Step 2):
+Now perform the actual archive (copies spec files and sets archived=true):
 
 ```bash
-# Run the archive (journal already generated, this sets archived=true)
+# Transition to release phase if needed
+bash .claude/scripts/aiit-guard.sh check verify release "<change-id>" --apply
+
+# Run the final archive (journal already generated in Step 2)
 bash .claude/scripts/aiit-archive.sh <change-id>
 ```
 
 This script:
-- Validates the entry state (phase=release, archived=false)
-- Calls `openspec archive <change-id>` if available, or manually copies files
+- Copies all spec files to `archive/<change-id>/`
 - Updates `.aiit.yaml` to set `archived: true`
 - Preserves the full file structure for audit trail
 

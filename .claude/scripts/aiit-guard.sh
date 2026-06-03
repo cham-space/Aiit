@@ -61,6 +61,7 @@ check_no_incomplete_tasks() {
   # Count incomplete checkboxes
   local incomplete
   incomplete=$(grep -cE '^\s*[-*]\s+\[\s*\]' "$tasks_file" 2>/dev/null || echo "0")
+  incomplete=$(echo "$incomplete" | tr -d '[:space:]')
 
   if [[ "$incomplete" -gt 0 ]]; then
     echo "  [HARD STOP] ${incomplete} incomplete task(s) in ${tasks_file}"
@@ -79,9 +80,9 @@ check_no_incomplete_tasks() {
 check_verify_report() {
   local change_id="$1"
 
-  # Read verify.report from .aiit.yaml
+  # Read verify.report from .aiit.yaml (pass change_id for precision)
   local report
-  report=$("$AIIT_STATE" get verify.report 2>/dev/null || echo "")
+  report=$("$AIIT_STATE" get "$change_id" verify.report 2>/dev/null || echo "")
 
   if [[ -z "$report" || "$report" == '""' || "$report" == "null" ]]; then
     echo "  [HARD STOP] verify.report is not set in .aiit.yaml"
@@ -192,9 +193,10 @@ check_transition() {
 # Apply the transition: update .aiit.yaml phase field.
 # ------------------------------------------------------------------------
 apply_transition() {
-  local to_phase="$1"
+  local change_id="$1"
+  local to_phase="$2"
 
-  "$AIIT_STATE" set phase "$to_phase"
+  "$AIIT_STATE" set "$change_id" phase "$to_phase"
   echo "[OK] Updated phase to: ${to_phase}"
 }
 
@@ -223,7 +225,7 @@ main() {
       if check_transition "$from_phase" "$to_phase" "$change_id"; then
         # Check passed
         if [[ $apply -eq 1 ]]; then
-          apply_transition "$to_phase"
+          apply_transition "$change_id" "$to_phase"
         fi
         exit 0
       else

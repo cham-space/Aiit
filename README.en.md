@@ -149,7 +149,7 @@ Type `/discover [idea]`. brainstorming skill activates → outputs PRD spec → 
 
 ### Phase 2: Plan
 
-Auto or manual entry. `writing-plans` reads PRD spec, decomposes into task DAG, parallel-produces API contract, design spec, test strategy.
+Run `/plan`. `writing-plans` reads PRD spec, decomposes into task DAG, parallel-produces API contract, design spec, test strategy.
 
 **Gate:** Task Granularity + No Cyclic Deps + Spec Alignment.
 
@@ -163,7 +163,7 @@ L2+: Ready tasks auto-parallelize (independent agents + isolated worktrees).
 
 ### Phase 4: Verify
 
-Auto entry. Seven-step verification: Contract → Security → Smoke Test → Visual Regression → Full Diagnostics → Code Review → `openspec validate`.
+Run `/verify`. Seven-step verification: Contract → Security → Smoke Test → Visual Regression → Full Diagnostics → Code Review → `openspec validate`. Produces verification report.
 
 **Gate:** All 5 gates must pass.
 
@@ -180,7 +180,9 @@ Run `/close-phase`. Pre-conditions verified → Migration Journal extraction →
 | Command | Description | Level |
 |---------|-------------|-------|
 | `/discover [idea]` | Phase 1 entry, produce PRD spec | L2+ |
+| `/plan` | Phase 2 entry, PRD → task DAG + parallel specs | L2+ |
 | `/execute` | Phase 3 entry, TDD implementation loop | L1+ |
+| `/verify` | Phase 4 entry, 7-step verification + report | L1+ |
 | `/hotfix [problem]` | Emergency fix (≤3 files, no new API/DB changes) | L0+ |
 | `/tweak [description]` | Small change shortcut (≤5 files, skips brainstorming, lightweight plan) | L0+ |
 | `/diagnose` | Read-only health audit (10 checks) | L0+ |
@@ -191,7 +193,7 @@ Run `/close-phase`. Pre-conditions verified → Migration Journal extraction →
 
 ## Skill Shortcut Reference
 
-Beyond the 7 base slash commands, you can directly invoke Superpowers and OpenSpec skills via these shortcuts.
+Beyond the 9 base slash commands, you can directly invoke Superpowers and OpenSpec skills via these shortcuts.
 
 ### Superpowers Skills
 
