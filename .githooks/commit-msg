@@ -35,11 +35,11 @@ COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
 # ---------------------------------------------------------
 # Conventional Commits regex
 # ---------------------------------------------------------
-# ^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)
+# ^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert|spec|tweak)
 # (\([a-zA-Z0-9_-]+\))?
 # :[ ].{1,}
 # ---------------------------------------------------------
-PATTERN='^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)(\([a-zA-Z0-9_-]+\))?: .{1,}'
+PATTERN='^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert|spec|tweak)(\([a-zA-Z0-9_-]+\))?: .{1,}'
 
 if [[ "$COMMIT_MSG" =~ $PATTERN ]]; then
   exit 0
@@ -70,6 +70,8 @@ format required by this project.
     ci       — CI/CD pipeline changes
     build    — build system or dependencies
     revert   — revert a previous commit
+    spec     — specification documents (PRD, plan, design)
+    tweak    — small change via /tweak shortcut
 
   Rules:
     - Type is required (choose from the list above).

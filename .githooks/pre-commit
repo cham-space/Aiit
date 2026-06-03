@@ -241,7 +241,7 @@ if hook_enabled "TDD_GATE"; then
 
   # Collect staged test files.
   STAGED_TESTS=$(git diff --cached --name-only --diff-filter=ACM \
-    | grep -E '/test/|/tests/|/spec/|/__tests__/|\.test\.|\.spec\.|Test\.java$|_test\.go$|_test\.py$' \
+    | grep -E '/test/|/tests/|/spec/|/__tests__/|\.test\.|\.spec\.|^test\.|test\.js$|test\.ts$|test\.py$|Test\.java$|_test\.go$|_test\.py$|Tests\.cs$' \
     || true)
 
   # Collect ALL staged files (for matching purposes).

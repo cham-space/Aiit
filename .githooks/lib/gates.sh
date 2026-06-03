@@ -142,36 +142,22 @@ gate_prd_completeness() {
   fi
 
   local missing_sections=""
-  local required_sections=(
-    "Overview|Background|Context"
-    "Goal|Non-Goal|Non-Requirement"
-    "User Story|Use Case|Scenario"
-    "Constraint|Dependenc|Technical"
-    "Success Metric|KPI|Measurement"
-  )
-
-  for section_pattern in "${required_sections[@]}"; do
-    if ! grep -qiE "${section_pattern}" "$prd_file"; then
-      # Try to identify which section is missing by its description
-      case "$section_pattern" in
-        "Overview|Background|Context")
-          missing_sections="${missing_sections}  - Overview / Background\n"
-          ;;
-        "Goal|Non-Goal|Non-Requirement")
-          missing_sections="${missing_sections}  - Goals & Non-Goals\n"
-          ;;
-        "User Story|Use Case|Scenario")
-          missing_sections="${missing_sections}  - User Stories / Use Cases\n"
-          ;;
-        "Constraint|Dependenc|Technical")
-          missing_sections="${missing_sections}  - Technical Constraints / Dependencies\n"
-          ;;
-        "Success Metric|KPI|Measurement")
-          missing_sections="${missing_sections}  - Success Metrics\n"
-          ;;
-      esac
-    fi
-  done
+  # Use separate grep calls for each pattern to avoid macOS BSD grep -qiE compatibility issues
+  if ! grep -qi "Overview" "$prd_file" && ! grep -qi "Background" "$prd_file" && ! grep -qi "Context" "$prd_file"; then
+    missing_sections="${missing_sections}  - Overview / Background\n"
+  fi
+  if ! grep -qi "Goal" "$prd_file" && ! grep -qi "Non-Goal" "$prd_file" && ! grep -qi "Non-Requirement" "$prd_file"; then
+    missing_sections="${missing_sections}  - Goals & Non-Goals\n"
+  fi
+  if ! grep -qi "User Stor" "$prd_file" && ! grep -qi "Use Case" "$prd_file" && ! grep -qi "Scenario" "$prd_file"; then
+    missing_sections="${missing_sections}  - User Stories / Use Cases\n"
+  fi
+  if ! grep -qi "Constraint" "$prd_file" && ! grep -qi "Dependenc" "$prd_file" && ! grep -qi "Technical" "$prd_file"; then
+    missing_sections="${missing_sections}  - Technical Constraints / Dependencies\n"
+  fi
+  if ! grep -qi "Success Metric" "$prd_file" && ! grep -qi "KPI" "$prd_file" && ! grep -qi "Measurement" "$prd_file"; then
+    missing_sections="${missing_sections}  - Success Metrics\n"
+  fi
 
   if [[ -n "$missing_sections" ]]; then
     fail_msg "  PRD COMPLETENESS: missing required sections:"
