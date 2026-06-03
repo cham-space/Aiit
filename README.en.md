@@ -163,7 +163,8 @@ Run `/close-phase`. Pre-conditions verified → Migration Journal extraction →
 | `/discover [idea]` | Phase 1 entry, produce PRD spec | L2+ |
 | `/execute` | Phase 3 entry, TDD implementation loop | L1+ |
 | `/hotfix [problem]` | Emergency fix (≤3 files, no new API/DB changes) | L0+ |
-| `/diagnose` | Read-only health audit (9 checks) | L0+ |
+| `/tweak [description]` | Small change shortcut (≤5 files, skips brainstorming, lightweight plan) | L0+ |
+| `/diagnose` | Read-only health audit (10 checks) | L0+ |
 | `/close-phase` | Phase 5 archival, knowledge extraction + openspec archive | L1+ |
 | `/onboard` | Interactive setup, role + level routing | All |
 
@@ -171,7 +172,7 @@ Run `/close-phase`. Pre-conditions verified → Migration Journal extraction →
 
 ## Skill Shortcut Reference
 
-Beyond the 6 base slash commands, you can directly invoke Superpowers and OpenSpec skills via these shortcuts.
+Beyond the 7 base slash commands, you can directly invoke Superpowers and OpenSpec skills via these shortcuts.
 
 ### Superpowers Skills
 

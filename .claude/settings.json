@@ -33,7 +33,7 @@
     "L0": {
       "name": "Hotfix",
       "description": "Emergency fix only, zero config",
-      "availableCommands": ["/hotfix", "/diagnose"],
+      "availableCommands": ["/hotfix", "/tweak", "/diagnose"],
       "skills": ["systematic-debugging"],
       "mcps": [],
       "hooksEnabled": {
@@ -48,7 +48,7 @@
     "L1": {
       "name": "Light",
       "description": "Individual developer, local quality checks",
-      "availableCommands": ["/hotfix", "/diagnose", "/execute", "/close-phase"],
+      "availableCommands": ["/hotfix", "/tweak", "/diagnose", "/execute", "/close-phase"],
       "skills": ["executing-plans", "TDD", "code-review", "verification-before-completion", "finishing-a-development-branch"],
       "mcps": ["TypeScript LSP", "Serena"],
       "hooksEnabled": {
@@ -63,7 +63,7 @@
     "L2": {
       "name": "Standard",
       "description": "Team workflow, full skill chain + MCPs + CI",
-      "availableCommands": ["/discover", "/execute", "/hotfix", "/diagnose", "/close-phase", "/onboard"],
+      "availableCommands": ["/discover", "/execute", "/hotfix", "/tweak", "/diagnose", "/close-phase", "/onboard"],
       "skills": ["brainstorming", "writing-plans", "api-contract-first", "frontend-design", "executing-plans", "TDD", "subagent-driven-development", "dispatching-parallel-agents", "code-review", "verification-before-completion", "release-builder", "finishing-a-development-branch"],
       "mcps": ["Playwright", "Figma", "Serena", "TypeScript LSP"],
       "hooksEnabled": {
@@ -78,7 +78,7 @@
     "L3": {
       "name": "Full",
       "description": "Enterprise: all modules + metrics + evolution",
-      "availableCommands": ["/discover", "/execute", "/hotfix", "/diagnose", "/close-phase", "/onboard"],
+      "availableCommands": ["/discover", "/execute", "/hotfix", "/tweak", "/diagnose", "/close-phase", "/onboard"],
       "skills": ["brainstorming", "design-brief-builder", "writing-plans", "api-contract-first", "frontend-design", "executing-plans", "TDD", "subagent-driven-development", "dispatching-parallel-agents", "code-review", "verification-before-completion", "release-builder", "finishing-a-development-branch", "evolution-engine", "feedback-writer"],
       "mcps": ["Playwright", "Figma", "Serena", "TypeScript LSP"],
       "hooksEnabled": {

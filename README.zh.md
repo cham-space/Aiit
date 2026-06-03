@@ -159,7 +159,8 @@ L2+：就绪任务自动并行执行（独立 Agent + 独立 worktree）。
 | `/discover [想法]` | Phase 1 入口，产出 PRD spec | L2+ |
 | `/execute` | Phase 3 入口，TDD 实现循环 | L1+ |
 | `/hotfix [问题]` | 紧急修复（≤3 文件、无新 API/DB 变更） | L0+ |
-| `/diagnose` | 只读健康审计（9 类检查） | L0+ |
+| `/tweak [描述]` | 小改动快捷路径（≤5 文件、跳过 brainstorming、轻量 plan） | L0+ |
+| `/diagnose` | 只读健康审计（10 类检查） | L0+ |
 | `/close-phase` | Phase 5 归档，知识萃取 + openspec archive | L1+ |
 | `/onboard` | 交互式初始化，角色+级别路由 | 全部 |
 
@@ -167,7 +168,7 @@ L2+：就绪任务自动并行执行（独立 Agent + 独立 worktree）。
 
 ## Skill 快捷指令参考
 
-除基座自带的 6 个斜杠命令外，还可通过以下快捷指令直接调用 Superpowers 和 OpenSpec 的 Skill。
+除基座自带的 7 个斜杠命令外，还可通过以下快捷指令直接调用 Superpowers 和 OpenSpec 的 Skill。
 
 ### Superpowers Skills
 
