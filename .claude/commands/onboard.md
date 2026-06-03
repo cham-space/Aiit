@@ -167,6 +167,38 @@ Skip `openspec init` and hook deployment. Focus on:
 2. Regenerating `.claude/CLAUDE.md`
 3. Re-running Phase 0 gates to confirm everything is still healthy
 
+#### Path: Migrate State (Existing project with specs but no .aiit.yaml)
+
+For projects that have existing `specs/` directories with changes but no `.aiit.yaml` state files, generate state files by scanning existing artifacts:
+
+```bash
+# Scan specs/ for existing changes
+for change_dir in specs/*/; do
+  if [[ -d "$change_dir" && ! -f "${change_dir}/.aiit.yaml" ]]; then
+    change_id=$(basename "$change_dir")
+    echo "Migrating state for: $change_id"
+
+    # Determine current phase based on existing artifacts
+    phase="discover"
+    [[ -f "specs/prd/${change_id}.md" || -f "${change_dir}/prd.md" ]] && phase="plan"
+    [[ -f "specs/plan/${change_id}.md" || -f "${change_dir}/plan.md" ]] && phase="execute"
+    [[ -d "archive/${change_id}" ]] && phase="archived"
+
+    # Initialize state file
+    bash .claude/scripts/aiit-state.sh init "$change_id"
+    bash .claude/scripts/aiit-state.sh set phase "$phase"
+
+    echo "  Created: ${change_dir}.aiit.yaml (phase: $phase)"
+  fi
+done
+
+# Commit the migrated state files
+git add specs/*/.aiit.yaml
+git commit -m "chore: migrate state tracking for existing changes"
+```
+
+This migration path ensures projects upgrading to the new state management system don't lose track of their existing changes.
+
 ### Step 5: Generate .claude/CLAUDE.md
 
 Read the generation rules from `.claude/templates/CLAUDE.md.template`, then based on `$LANG` + `$ROLE` + `$LEVEL`, generate `.claude/CLAUDE.md` dynamically.

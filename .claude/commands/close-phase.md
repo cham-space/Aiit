@@ -30,6 +30,15 @@ Before running this command, ALL of the following must be true:
 4. Zero P0 bugs open against this change.
 5. All code merged to the target branch (main/master).
 
+**State Check**: Verify the change is in the correct phase:
+```bash
+bash .claude/scripts/aiit-state.sh get phase
+# Should return: release
+
+# If not in release phase, transition first:
+bash .claude/scripts/aiit-guard.sh check verify release "<change-id>" --apply
+```
+
 If any pre-condition fails, output exactly what is missing and stop. Do not proceed with partial archival.
 
 ## Process
@@ -134,22 +143,26 @@ Do not proceed until the user explicitly approves.
    git commit -m "docs: update .claude/CLAUDE.md -- archive <change-id>"
    ```
 
-### Step 5: Run openspec archive
+### Step 5: Archive via Script
 
-Execute the automated archival:
+Execute the automated archival using the aiit-archive.sh script:
 
+```bash
+# First, preview what will be archived
+bash .claude/scripts/aiit-archive.sh <change-id> --dry-run
+
+# If the preview looks correct, run the actual archive
+bash .claude/scripts/aiit-archive.sh <change-id>
 ```
-openspec archive <change-id>
-```
 
-This command:
-- Moves all `specs/<change-id>/` artifacts to `archive/<change-id>/`
-- Consolidates flat spec files (`specs/prd/<change-id>.md`, `specs/plan/<change-id>.md`, etc.) into the archive
-- Sets the change status to `archived`
+This script:
+- Validates the entry state (phase=release, archived=false)
+- Calls `openspec archive <change-id>` if available, or manually copies files
+- Updates `.aiit.yaml` to set `archived: true`
 - Preserves the full file structure for audit trail
 
-If `openspec archive` is not available, manually:
-```
+**Fallback**: If the script fails, manually archive:
+```bash
 mkdir -p archive/<change-id>
 cp -r specs/<change-id>/* archive/<change-id>/
 cp specs/prd/<change-id>.md archive/<change-id>/ 2>/dev/null || true

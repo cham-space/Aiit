@@ -25,6 +25,18 @@ Before anything else, verify:
 
 If any pre-condition fails, stop. Direct the user back to Phase 2 (Plan). Do not proceed with a partial or missing plan.
 
+**State Recovery**: Check if this change has existing execution state:
+```bash
+# Check current phase and resume point
+bash .claude/scripts/aiit-state.sh get phase
+bash .claude/scripts/aiit-state.sh get execute.current_task
+```
+
+If `phase` is already `execute` and `current_task` is set, resume from that task instead of starting over. Update the state to reflect the current phase:
+```bash
+bash .claude/scripts/aiit-state.sh set phase execute
+```
+
 ### Step 1: Read and Topologically Sort Tasks
 
 1. Read `specs/plan/<change-id>.md` to extract the full task list with dependency edges.
@@ -100,6 +112,15 @@ TDD Log:
 
 The pre-commit hook runs: format -> lint -> type-check -> secret-scan -> TDD_GATE. The commit-msg hook enforces conventional commit format. If any hook fails, fix and re-commit.
 
+**Update State**: After each successful commit, update the execution state:
+```bash
+# Update completed task count and current task
+bash .claude/scripts/aiit-state.sh set execute.tasks_completed <N>
+bash .claude/scripts/aiit-state.sh set execute.current_task "<task-id>"
+```
+
+This enables session interruption recovery -- if the session is interrupted, the next `/execute` call can resume from the correct task.
+
 ### Step 3: L2+ Parallel Mode (Conditional)
 
 When `enableLevel >= L2` AND at least 2 tasks have all dependencies satisfied:
@@ -158,4 +179,25 @@ Aggregate summary after all tasks complete:
 
 All Phase 3 gates: TDD PASS, File Scope PASS, Spec Drift PASS
 Change status: executed
+```
+
+### Step 4: Transition to Verify Phase
+
+After all tasks are complete and committed, transition the state to `verify`:
+
+```bash
+# Check if transition is allowed (all tasks completed)
+bash .claude/scripts/aiit-guard.sh check execute verify "<change-id>"
+
+# If PASS, apply the transition
+bash .claude/scripts/aiit-guard.sh check execute verify "<change-id>" --apply
+
+# Verify the state was updated
+bash .claude/scripts/aiit-state.sh get phase
+```
+
+Commit the state update:
+```bash
+git add specs/<change-id>/.aiit.yaml
+git commit -m "chore: transition <change-id> to verify phase"
 ```

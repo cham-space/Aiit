@@ -82,6 +82,31 @@ git commit -m "spec: add PRD for <change-id> -- <brief summary>"
 
 The commit-msg hook (`conventional commit` format) will validate the message. The change is now in `proposed` status.
 
+### Step 6: Initialize State Tracking
+
+After the PRD is committed, initialize the state tracking file for this change:
+
+```bash
+# Initialize .aiit.yaml for this change
+bash .claude/scripts/aiit-state.sh init "<change-id>"
+```
+
+This creates `specs/<change-id>/.aiit.yaml` with:
+- `phase: discover`
+- `workflow: full`
+- `archived: false`
+
+Verify the state was initialized:
+```bash
+bash .claude/scripts/aiit-state.sh list
+```
+
+Commit the state file:
+```bash
+git add specs/<change-id>/.aiit.yaml
+git commit -m "chore: initialize state tracking for <change-id>"
+```
+
 ## Hard Gate
 
 Both `gate_prd_completeness` and `gate_testability` must return PASS before this command considers itself complete. The change must be committed with status `proposed`. If the PRD has fewer than 2 user stories with quantifiable acceptance criteria, or if any mandatory section is missing, the command is not done. Do not hand off to Phase 2 (Plan) until these conditions are satisfied.

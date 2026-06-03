@@ -168,6 +168,27 @@ Flag missing artifacts per change.
   <change-id> (planned): PRD=OK, Plan=OK, Tasks=OK, API-spec=MISSING, Design-spec=MISSING
 ```
 
+### Check 10: YAML State Health
+
+Validate all `.aiit.yaml` state files using the schema validator:
+
+- Run `bash .claude/scripts/aiit-yaml-validate.sh` to check all active `.aiit.yaml` files
+- Verify required fields exist: `change_id`, `workflow`, `phase`
+- Verify enum values are valid: `phase` (discover|plan|execute|verify|release|archived), `workflow` (full|hotfix|tweak)
+- Flag unknown/typo fields
+- Check file path references (e.g., `verify.report` path exists)
+- Report state consistency: phase matches expected artifacts
+
+```bash
+bash .claude/scripts/aiit-yaml-validate.sh
+```
+
+```
+[PASS/FAIL/WARN] YAML State Health:
+  specs/<change-id>/.aiit.yaml: valid
+  specs/<change-id>/.aiit.yaml: WARN - unknown field 'executte'
+```
+
 ## Hard Gate
 
 This command has no hard gate -- it is a pure diagnostic and always completes. However, it MUST NOT modify any file. If any check would require a write operation to complete, skip that sub-check and mark it as `[WARN] -- requires write access`. The health report is always produced regardless of failures found.
@@ -210,6 +231,9 @@ Level: L<N>
 
 ### 9. Phase Artifact Completeness
 [PASS/FAIL/WARN] <details>
+
+### 10. YAML State Health
+[PASS/FAIL/WARN] <details -- list all .aiit.yaml files and validation status>
 
 ## Remediation Recommendations
 <Numbered list of concrete, executable fix commands for each FAIL/WARN item>
