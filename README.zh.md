@@ -58,7 +58,7 @@ AI Development Base 是一套**面向产研团队的标准化 AI 开发基础设
 **方式一：CLI 安装（推荐）**
 
 ```bash
-# 全局安装 CLI
+# 全局安装 CLI（跨平台：macOS、Linux、Windows）
 npm install -g aiit-base
 
 # 在项目目录初始化
@@ -73,6 +73,11 @@ CLI 提供以下命令：
 - `aiit status` — 查看活跃变更和当前阶段
 - `aiit doctor` — 诊断安装健康状态
 - `aiit update` — 更新到最新版本
+
+**Windows 用户注意：**
+- v1.0.1+ 已支持 Windows 跨平台
+- 使用 PowerShell 或 CMD 运行 `aiit` 命令
+- Shell 脚本（.sh 文件）需要 Git Bash 或 WSL 环境
 
 **方式二：手动复制**
 
@@ -246,7 +251,7 @@ L2+：就绪任务自动并行执行（独立 Agent + 独立 worktree）。
 | `.claude/WORKFLOW.md` | 流程手册 | 完整的五阶段流程说明、Gate 清单、Skill/MCP 映射 |
 | `.claude/settings.json` | 配置文件 | 权限声明、L0-L3 级别定义、阶段→Skill→Gate 映射 |
 | `.claude/skills/openspec.md` | Skill 定义 | OpenSpec 操作的 Skill 封装（init/validate/diff/archive） |
-| `.claude/commands/` | 命令定义 | 6 个斜杠命令（discover/execute/hotfix/diagnose/close-phase/onboard） |
+| `.claude/commands/` | 命令定义 | 9 个斜杠命令（discover/plan/execute/verify/hotfix/tweak/diagnose/close-phase/onboard） |
 | `.claude/reference/` | 参考文档 | 按需读取：spec-drift-guide + 6 种 test-strategies |
 | `.githooks/` | Git Hook | pre-commit / commit-msg / pre-push + 共享脚本库 |
 | `.githooks/lib/gates.sh` | Gate 引擎 | 17 个质量 Gate 函数 + run_phase_gates 调度器 |
@@ -286,4 +291,19 @@ L2+：就绪任务自动并行执行（独立 Agent + 独立 worktree）。
 
 ## 版本
 
-v1.0.0 — 2026-05-08
+v1.0.1 — 2026-06-04
+
+### 更新日志
+
+**v1.0.1 (2026-06-04)**
+- ✨ Windows 跨平台兼容 — 使用 Node.js fs API 替代 shell 命令
+- 🔧 修复 TDD_GATE 误报非源代码文件（LICENSE、.gitignore 等）
+- 🔧 修复 commit-msg 不支持 spec/tweak 类型
+- 🔧 修复 PRD gate 的 macOS grep 兼容性问题
+- 🔧 修复 TDD_GATE 不识别 test.js 等 Node.js 测试文件
+
+**v1.0.0 (2026-06-04)**
+- 🎉 首次公开发布到 npm
+- 9 个斜杠命令 + 4 个 CLI 命令
+- 17 个质量 Gate + 5 个自动化脚本
+- 完整 5 阶段生命周期管理

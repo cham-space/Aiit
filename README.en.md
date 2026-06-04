@@ -60,7 +60,7 @@ The base depends on the following components. Some require prior installation:
 **Option 1: CLI install (recommended)**
 
 ```bash
-# Install CLI globally
+# Install CLI globally (cross-platform: macOS, Linux, Windows)
 npm install -g aiit-base
 
 # Initialize in your project directory
@@ -75,6 +75,11 @@ The CLI provides these commands:
 - `aiit status` — View active changes and current phase
 - `aiit doctor` — Diagnose installation health
 - `aiit update` — Update to latest version
+
+**Windows users:**
+- v1.0.1+ supports Windows cross-platform
+- Run `aiit` commands in PowerShell or CMD
+- Shell scripts (.sh files) require Git Bash or WSL
 
 **Option 2: Manual copy**
 
@@ -250,7 +255,7 @@ Project-level skill, defined in `.claude/skills/openspec.md`. Format: `/openspec
 | `.claude/WORKFLOW.md` | Process handbook | Complete five-phase process docs, Gate inventory, Skill/MCP mappings |
 | `.claude/settings.json` | Config | Permission declarations, L0-L3 level definitions, phase→skill→gate mappings |
 | `.claude/skills/openspec.md` | Skill definition | OpenSpec operations skill (init/validate/diff/archive) |
-| `.claude/commands/` | Command definitions | 6 slash commands (discover/execute/hotfix/diagnose/close-phase/onboard) |
+| `.claude/commands/` | Command definitions | 9 slash commands (discover/plan/execute/verify/hotfix/tweak/diagnose/close-phase/onboard) |
 | `.claude/reference/` | Reference docs | On-demand reading: spec-drift-guide + 6 test-strategies |
 | `.githooks/` | Git hooks | pre-commit / commit-msg / pre-push + shared script libraries |
 | `.githooks/lib/gates.sh` | Gate engine | 17 quality Gate functions + run_phase_gates dispatcher |
@@ -290,4 +295,19 @@ Run `/diagnose` to see what's missing and get install commands. Installed skills
 
 ## Version
 
-v1.0.0 — 2026-05-08
+v1.0.1 — 2026-06-04
+
+### Changelog
+
+**v1.0.1 (2026-06-04)**
+- ✨ Windows cross-platform support — Use Node.js fs API instead of shell commands
+- 🔧 Fix TDD_GATE false positives on non-source files (LICENSE, .gitignore, etc.)
+- 🔧 Fix commit-msg not supporting spec/tweak types
+- 🔧 Fix PRD gate macOS grep compatibility issue
+- 🔧 Fix TDD_GATE not recognizing test.js and other Node.js test files
+
+**v1.0.0 (2026-06-04)**
+- 🎉 First public release on npm
+- 9 slash commands + 4 CLI commands
+- 17 quality Gates + 5 automation scripts
+- Complete 5-phase lifecycle management
