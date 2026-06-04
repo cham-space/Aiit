@@ -15,9 +15,7 @@
 
 ## 活跃变更
 
-| Change ID | 状态 | Phase |
-|-----------|------|-------|
-| `20260521-phase1-settle-monitor` | proposed | 1 — Discover |
+暂无活跃变更。运行 `/discover "你的想法"` 来创建新的变更。
 
 ## 使用方式
 

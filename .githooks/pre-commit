@@ -237,6 +237,11 @@ if hook_enabled "TDD_GATE"; then
     | grep -v '^\.claude/' \
     | grep -v '^bin/' \
     | grep -v '^package\.json$' \
+    | grep -v '^package-lock\.json$' \
+    | grep -v '^LICENSE' \
+    | grep -v '^\.gitignore$' \
+    | grep -v '^\.gitleaks\.toml$' \
+    | grep -v '^\.npmignore$' \
     || true)
 
   # Collect staged test files.

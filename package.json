@@ -1,6 +1,6 @@
 {
-  "name": "@aiit/base",
-  "version": "1.0.0",
+  "name": "aiit-base",
+  "version": "1.0.1",
   "description": "AI Development Base — OpenSpec + Superpowers workflow orchestration",
   "bin": {
     "aiit": "./bin/aiit.js"
@@ -15,9 +15,10 @@
     "openspec",
     "superpowers",
     "claude-code",
-    "tdd"
+    "tdd",
+    "ai-development"
   ],
-  "author": "",
+  "author": "vccham",
   "license": "MIT",
   "engines": {
     "node": ">=16.0.0"
@@ -29,10 +30,16 @@
     ".githooks/",
     "specs/",
     "README.md",
+    "README.zh.md",
+    "README.en.md",
     "LICENSE"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/aiit.git"
+    "url": "https://github.com/cham-space/Aiit.git"
+  },
+  "homepage": "https://github.com/cham-space/Aiit",
+  "bugs": {
+    "url": "https://github.com/cham-space/Aiit/issues"
   }
 }

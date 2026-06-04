@@ -13,7 +13,7 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const AIIT_VERSION = '1.0.0';
+const AIIT_VERSION = '1.0.1';
 
 // --- Helpers ---
 
@@ -39,6 +39,46 @@ function fileExists(filepath) {
 
 function dirExists(dirpath) {
   return fs.existsSync(dirpath) && fs.statSync(dirpath).isDirectory();
+}
+
+// --- Cross-platform file operations ---
+
+function copyDir(src, dest) {
+  if (fs.cpSync) {
+    // Node.js 16.7.0+ supports fs.cpSync
+    fs.cpSync(src, dest, { recursive: true });
+  } else {
+    // Fallback for older Node.js versions
+    copyDirRecursive(src, dest);
+  }
+}
+
+function copyDirRecursive(src, dest) {
+  if (!fs.existsSync(dest)) {
+    fs.mkdirSync(dest, { recursive: true });
+  }
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyDirRecursive(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
+function copyFile(src, dest) {
+  fs.copyFileSync(src, dest);
+}
+
+function makeExecutable(filepath) {
+  try {
+    fs.chmodSync(filepath, 0o755);
+  } catch (e) {
+    // Ignore on Windows
+  }
 }
 
 // --- aiit init ---
@@ -68,27 +108,27 @@ function cmdInit() {
   // Copy .claude directory
   if (dirExists(path.join(pkgPath, '.claude'))) {
     log('  Copying .claude/...');
-    execSync(`cp -r "${pkgPath}/.claude" "${cwd}/"`, { stdio: 'inherit' });
+    copyDir(path.join(pkgPath, '.claude'), path.join(cwd, '.claude'));
     logOk('.claude/ installed');
   }
 
   // Copy .githooks directory
   if (dirExists(path.join(pkgPath, '.githooks'))) {
     log('  Copying .githooks/...');
-    execSync(`cp -r "${pkgPath}/.githooks" "${cwd}/"`, { stdio: 'inherit' });
+    copyDir(path.join(pkgPath, '.githooks'), path.join(cwd, '.githooks'));
     logOk('.githooks/ installed');
   }
 
   // Copy specs directory
   if (dirExists(path.join(pkgPath, 'specs'))) {
     log('  Copying specs/...');
-    execSync(`cp -r "${pkgPath}/specs" "${cwd}/"`, { stdio: 'inherit' });
+    copyDir(path.join(pkgPath, 'specs'), path.join(cwd, 'specs'));
     logOk('specs/ installed');
   }
 
   // Copy .gitleaks.toml if exists
   if (fileExists(path.join(pkgPath, '.gitleaks.toml'))) {
-    execSync(`cp "${pkgPath}/.gitleaks.toml" "${cwd}/"`, { stdio: 'inherit' });
+    copyFile(path.join(pkgPath, '.gitleaks.toml'), path.join(cwd, '.gitleaks.toml'));
     logOk('.gitleaks.toml installed');
   }
 
@@ -102,15 +142,35 @@ function cmdInit() {
     logWarn('Could not activate git hooks (not a git repository?)');
   }
 
-  // Make scripts executable
+  // Make scripts executable (Unix only, ignored on Windows)
   log('');
   log('  Setting permissions...');
-  try {
-    execSync('chmod +x .githooks/pre-commit .githooks/commit-msg .githooks/pre-push 2>/dev/null || true', { stdio: 'inherit' });
-    execSync('chmod +x .claude/scripts/*.sh 2>/dev/null || true', { stdio: 'inherit' });
-    logOk('Scripts made executable');
-  } catch (e) {
-    // Ignore permission errors on Windows
+  const isWindows = process.platform === 'win32';
+  if (!isWindows) {
+    try {
+      const scripts = [
+        '.githooks/pre-commit',
+        '.githooks/commit-msg',
+        '.githooks/pre-push'
+      ];
+      scripts.forEach(s => makeExecutable(s));
+
+      // Make all .sh files in .claude/scripts/ executable
+      const scriptsDir = '.claude/scripts';
+      if (dirExists(scriptsDir)) {
+        fs.readdirSync(scriptsDir).forEach(file => {
+          if (file.endsWith('.sh')) {
+            makeExecutable(path.join(scriptsDir, file));
+          }
+        });
+      }
+      logOk('Scripts made executable');
+    } catch (e) {
+      // Ignore permission errors
+      logWarn('Could not set permissions (not critical)');
+    }
+  } else {
+    logOk('Permissions set (Windows)');
   }
 
   log('');
