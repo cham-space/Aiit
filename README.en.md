@@ -61,7 +61,7 @@ The base depends on the following components. Some require prior installation:
 
 ```bash
 # Install CLI globally
-npm install -g @aiit/base
+npm install -g aiit-base
 
 # Initialize in your project directory
 cd your-project

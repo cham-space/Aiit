@@ -242,7 +242,7 @@ function cmdUpdate() {
   log('');
 
   try {
-    execSync('npm install -g @aiit/base@latest', { stdio: 'inherit' });
+    execSync('npm install -g aiit-base@latest', { stdio: 'inherit' });
     log('');
     logOk('Update complete!');
     log('');

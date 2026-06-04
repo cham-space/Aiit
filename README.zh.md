@@ -59,7 +59,7 @@ AI Development Base 是一套**面向产研团队的标准化 AI 开发基础设
 
 ```bash
 # 全局安装 CLI
-npm install -g @aiit/base
+npm install -g aiit-base
 
 # 在项目目录初始化
 cd your-project

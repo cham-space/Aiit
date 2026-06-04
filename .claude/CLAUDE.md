@@ -1,20 +1,11 @@
-# 项目：yu-settle-service
-
-## 语言
-- 中文（所有交互使用中文）
+# Aiit 基座
 
 ## 概述
-资金归集监控与预警系统 — 对各渠道每日清分状态进行自动扫描、状态判定、预警推送和健康度统计，实现资金归集的全链路可观测。
+Aiit — AI 开发基座，提供 OpenSpec 变更管理、阶段守卫、自动化归档等工程化能力。
 
-- **语言**：Java 1.8
-- **框架**：Spring Boot（xframework-parent-web）
-- **构建工具**：Maven
-- **数据库**：MySQL（eid_reconciliation_master 只读 + settle_* 读写）
-
-## 角色与级别
-- 角色：全栈独立
-- 级别：L3 Full（全量 — 企业级）
-- 配置日期：2026-05-21
+- **语言**：Node.js / TypeScript
+- **分发**：npm CLI（`npm install -g aiit-base`）
+- **交互语言**：中文（所有交互使用中文）
 
 ## 可用命令
 | 命令 | 用途 |
@@ -26,58 +17,9 @@
 | `/close-phase` | 压缩阶段知识到迁移日志，归档并清理 |
 | `/onboard` | 交互式渐进配置 |
 
-## 构建与测试
-```bash
-# 构建
-mvn clean package
-
-# 测试
-mvn test
-
-# 跳过测试构建
-mvn clean package -DskipTests
-```
-
 ## 活跃变更
+
 暂无活跃变更。运行 `/discover "你的想法"` 来创建新的变更。
-
-## 已完成变更
-| Change ID | 概述 | 归档日期 |
-|-----------|------|----------|
-| 20260521-phase1-settle-monitor | 清分监控核心链路：巡检、预警、日报、Dashboard、Hook API、健康度、配置管理 | 2026-05-22 |
-
-## 架构
-```
-yu-settle-service/
-├── src/main/java/com/yu/settle/
-│   ├── Application.java              # 应用入口
-│   ├── schedule/SettleScheduler.java # 定时扫描调度
-│   ├── dao/                          # 数据访问层（10个DAO）
-│   │   ├── ReconciliationMasterDao   # eid_* 只读
-│   │   ├── MonitorSnapshotDao        # 快照表
-│   │   ├── AlertRuleDao              # 预警规则
-│   │   ├── AlertRecordDao            # 预警记录
-│   │   ├── ChannelConfigDao          # 渠道配置
-│   │   ├── NotifyGroupDao            # 通知组
-│   │   ├── HookCallLogDao            # Hook调用日志
-│   │   └── OperatorDao               # 运营人员
-│   ├── service/                      # 业务服务层
-│   │   ├── MonitorService            # 监控扫描
-│   │   ├── AlertService              # 预警判定
-│   │   ├── HealthService             # 健康度统计
-│   │   ├── HookService               # Hook API
-│   │   └── ConfigService             # 运维配置管理
-│   └── util/                         # 工具类
-│       ├── SettleConstant            # 系统常量
-│       ├── DateUtil                  # 日期工具
-│       └── NotifyUtil                # 通知工具（短信）
-├── src/test/java/com/yu/settle/     # 测试
-├── specs/                            # OpenSpec 规格目录
-├── archive/                          # 归档目录
-└── config/                           # 配置文件
-```
-
-分层架构：Schedule（定时触发）→ Service（业务逻辑）→ DAO（数据访问）→ Entity/Model
 
 ## 约束
 - **严禁跳过 Gate**：所有阶段 gate 必须通过
@@ -85,8 +27,8 @@ yu-settle-service/
 - **并行 Agent**：是
 - **文件范围强制**：是（变更文件必须在计划范围内）
 - **规格漂移检测**：是
-- **质量指标收集**：是（L3 特性）
-- **反馈闭环**：是（自动进化规则/模板）
+- **质量指标收集**：是
+- **反馈闭环**：是
 - **自动归档**：是
 
 ## 可用 MCP 服务器
